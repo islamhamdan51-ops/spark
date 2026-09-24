@@ -11,6 +11,38 @@ declare global {
 const roomsMap: Map<string, RoomState> = globalThis.__SPARK_ROOMS_STORE || new Map<string, RoomState>();
 globalThis.__SPARK_ROOMS_STORE = roomsMap;
 
+type RoomCallback = (room: RoomState) => void;
+const subscribersMap: Map<string, Set<RoomCallback>> =
+  (globalThis as any).__SPARK_ROOM_SUBSCRIBERS || new Map<string, Set<RoomCallback>>();
+(globalThis as any).__SPARK_ROOM_SUBSCRIBERS = subscribersMap;
+
+export function subscribeServerRoom(code: string, callback: RoomCallback): () => void {
+  if (!subscribersMap.has(code)) {
+    subscribersMap.set(code, new Set());
+  }
+  subscribersMap.get(code)!.add(callback);
+  return () => {
+    const set = subscribersMap.get(code);
+    if (set) {
+      set.delete(callback);
+      if (set.size === 0) {
+        subscribersMap.delete(code);
+      }
+    }
+  };
+}
+
+export function broadcastServerRoom(room: RoomState): void {
+  const subs = subscribersMap.get(room.code);
+  if (subs) {
+    subs.forEach((cb) => {
+      try {
+        cb(room);
+      } catch {}
+    });
+  }
+}
+
 // Temporary filesystem backup directory for serverless cold-start resilience
 const TMP_DIR = path.join(process.cwd(), ".next", "cache", "spark_rooms");
 
@@ -46,6 +78,8 @@ export function getServerRoom(code: string): RoomState | null {
 }
 
 export function saveServerRoom(room: RoomState): void {
+  room.lastUpdatedAt = Date.now();
+  room.version = (room.version || 0) + 1;
   roomsMap.set(room.code, room);
 
   try {
@@ -53,6 +87,9 @@ export function saveServerRoom(room: RoomState): void {
     const filePath = path.join(TMP_DIR, `${room.code}.json`);
     fs.writeFileSync(filePath, JSON.stringify(room), "utf-8");
   } catch {}
+
+  // Instant real-time broadcast to all active SSE subscribers!
+  broadcastServerRoom(room);
 }
 
 export function addPlayerToServerRoom(
@@ -116,6 +153,14 @@ export function addAnswerToServerRoom(
     room.answers[existingIdx] = answer;
   } else {
     room.answers.push(answer);
+  }
+
+  // Update player score if points awarded
+  if (answer.pointsAwarded && answer.pointsAwarded > 0) {
+    const player = room.players.find((p) => p.id === answer.playerId);
+    if (player) {
+      player.score = (player.score || 0) + answer.pointsAwarded;
+    }
   }
 
   saveServerRoom(room);

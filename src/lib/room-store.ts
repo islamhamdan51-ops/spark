@@ -17,6 +17,7 @@ class RoomManager {
   private listeners: Map<string, Set<RoomListener>> = new Map();
   private firebaseUnsubscribers: Map<string, () => void> = new Map();
   private pollIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private eventSources: Map<string, EventSource> = new Map();
   private channels: Map<string, BroadcastChannel> = new Map();
   private cancelSimAnswers: (() => void) | null = null;
 
@@ -29,12 +30,45 @@ class RoomManager {
           if (e.newValue) {
             try {
               const state = JSON.parse(e.newValue) as RoomState;
-              this.rooms.set(code, state);
-              this.notifyListeners(code, state);
+              this.applyIncomingState(code, state);
             } catch {}
           }
         }
       });
+    }
+  }
+
+  private applyIncomingState(code: string, incoming: RoomState) {
+    if (!incoming || incoming.code !== code) return;
+    const current = this.rooms.get(code);
+
+    if (current) {
+      const statusChanged = incoming.status !== current.status;
+      const roundChanged = incoming.currentRoundIndex !== current.currentRoundIndex;
+      const playersCountChanged = (incoming.players?.length || 0) !== (current.players?.length || 0);
+      const answersCountChanged = (incoming.answers?.length || 0) !== (current.answers?.length || 0);
+
+      // Only ignore if strictly older version and no structural game state changed
+      if (
+        !statusChanged &&
+        !roundChanged &&
+        !playersCountChanged &&
+        !answersCountChanged &&
+        current.version !== undefined &&
+        incoming.version !== undefined &&
+        incoming.version < current.version
+      ) {
+        return;
+      }
+    }
+
+    this.rooms.set(code, incoming);
+    this.notifyListeners(code, incoming);
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`spark_room_state_${code}`, JSON.stringify(incoming));
+      } catch {}
     }
   }
 
@@ -43,10 +77,36 @@ class RoomManager {
     if (!this.channels.has(code)) {
       const ch = new BroadcastChannel(`spark_channel_${code}`);
       ch.onmessage = (event) => {
-        if (event.data && event.data.type === "SYNC_STATE") {
+        if (!event.data) return;
+        if (event.data.type === "SYNC_STATE") {
           const state = event.data.state as RoomState;
-          this.rooms.set(code, state);
-          this.notifyListeners(code, state);
+          this.applyIncomingState(code, state);
+        } else if (event.data.type === "NEW_ANSWER") {
+          const answer = event.data.answer as PlayerAnswer;
+          const current = this.rooms.get(code);
+          if (current) {
+            const exists = current.answers.some(
+              (a) => a.playerId === answer.playerId && a.roundId === answer.roundId
+            );
+            if (!exists) {
+              let updatedPlayers = current.players;
+              if (answer.pointsAwarded && answer.pointsAwarded > 0) {
+                updatedPlayers = current.players.map((p) =>
+                  p.id === answer.playerId
+                    ? { ...p, score: p.score + (answer.pointsAwarded || 0) }
+                    : p
+                );
+              }
+              const updated: RoomState = {
+                ...current,
+                answers: [...current.answers, answer],
+                players: updatedPlayers,
+                lastUpdatedAt: Date.now(),
+              };
+              this.rooms.set(code, updated);
+              this.notifyListeners(code, updated);
+            }
+          }
         }
       };
       this.channels.set(code, ch);
@@ -55,6 +115,8 @@ class RoomManager {
   }
 
   private persistAndBroadcast(code: string, state: RoomState) {
+    state.lastUpdatedAt = Date.now();
+    state.version = (state.version || 0) + 1;
     this.rooms.set(code, state);
 
     // 1. Sync to Firebase Realtime Database if configured
@@ -62,11 +124,14 @@ class RoomManager {
       writeFirebaseRoomState(code, state).catch(() => {});
     }
 
-    // 2. Sync to Server API (ensures cross-device sync on Vercel even without Firebase)
+    // 2. Sync to Server API (ensures cross-device sync)
     if (typeof window !== "undefined" && !state.isDemo) {
       fetch(`/api/rooms/${code}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
         body: JSON.stringify(state),
       }).catch(() => {});
     }
@@ -84,9 +149,8 @@ class RoomManager {
     this.notifyListeners(code, state);
   }
 
-  public getOrCreateRoom(code: string, activitySlug: string = "this-or-that", isDemo: boolean = false): RoomState {
+  public getLocalRoom(code: string): RoomState | null {
     let existing = this.rooms.get(code);
-
     if (!existing && typeof window !== "undefined") {
       const saved = localStorage.getItem(`spark_room_state_${code}`);
       if (saved) {
@@ -96,6 +160,11 @@ class RoomManager {
         } catch {}
       }
     }
+    return existing || null;
+  }
+
+  public getOrCreateRoom(code: string, activitySlug: string = "this-or-that", isDemo: boolean = false): RoomState {
+    let existing = this.getLocalRoom(code);
 
     if (!existing) {
       const act = ACTIVITIES.find((a) => a.slug === activitySlug || a.id === activitySlug) || ACTIVITIES[0];
@@ -113,6 +182,8 @@ class RoomManager {
         isTeamMode: false,
         isDemo,
         createdAt: Date.now(),
+        lastUpdatedAt: Date.now(),
+        version: 1,
         soundEnabled: true,
       };
 
@@ -130,47 +201,77 @@ class RoomManager {
     this.listeners.get(code)!.add(listener);
     this.getChannel(code);
 
-    const current = this.rooms.get(code);
+    let current = this.getLocalRoom(code);
     if (current) {
       listener(current);
     }
 
-    // 1. Subscribe to Firebase Realtime updates for live multiplayer if configured
+    // 1. Immediate fetch from server with anti-cache query
+    if (typeof window !== "undefined" && !current?.isDemo) {
+      fetch(`/api/rooms/${code}?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && data.room) {
+            this.applyIncomingState(code, data.room);
+          }
+        })
+        .catch(() => {});
+    }
+
+    // 2. Firebase Realtime updates if configured
     if (isFirebaseConfigured() && !this.firebaseUnsubscribers.has(code) && !current?.isDemo) {
       const unsub = subscribeToFirebaseRoom(code, (remoteRoom) => {
         if (remoteRoom) {
-          this.rooms.set(code, remoteRoom);
-          this.notifyListeners(code, remoteRoom);
+          this.applyIncomingState(code, remoteRoom);
         }
       });
       this.firebaseUnsubscribers.set(code, unsub);
     }
 
-    // 2. Cross-device Server Polling fallback when Firebase is not active
-    if (!isFirebaseConfigured() && typeof window !== "undefined" && !current?.isDemo && !this.pollIntervals.has(code)) {
+    // 3. Server-Sent Events (SSE) for instantaneous zero-latency sync
+    if (
+      typeof window !== "undefined" &&
+      typeof EventSource !== "undefined" &&
+      !current?.isDemo &&
+      !this.eventSources.has(code)
+    ) {
+      try {
+        const es = new EventSource(`/api/rooms/${code}/stream`);
+        es.onmessage = (event) => {
+          if (!event.data) return;
+          try {
+            const incoming = JSON.parse(event.data) as RoomState;
+            if (incoming && incoming.code === code) {
+              this.applyIncomingState(code, incoming);
+            }
+          } catch {}
+        };
+        es.onerror = () => {
+          // SSE will auto-reconnect, and polling fallback below guarantees delivery
+        };
+        this.eventSources.set(code, es);
+      } catch {}
+    }
+
+    // 4. Fast Cross-device Server Polling fallback (350ms) to beat mobile proxy latency
+    if (typeof window !== "undefined" && !current?.isDemo && !this.pollIntervals.has(code)) {
       const interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/rooms/${code}`);
+          const res = await fetch(`/api/rooms/${code}?_t=${Date.now()}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" },
+          });
           if (res.ok) {
             const data = await res.json();
-            if (data.success && data.room) {
-              const prev = this.rooms.get(code);
-              // Only notify if something meaningful changed
-              const changed =
-                !prev ||
-                prev.status !== data.room.status ||
-                prev.currentRoundIndex !== data.room.currentRoundIndex ||
-                prev.players.length !== data.room.players.length ||
-                prev.answers.length !== data.room.answers.length;
-
-              if (changed) {
-                this.rooms.set(code, data.room);
-                this.notifyListeners(code, data.room);
-              }
+            if (data && data.success && data.room) {
+              this.applyIncomingState(code, data.room);
             }
           }
         } catch {}
-      }, 1200);
+      }, 350);
 
       this.pollIntervals.set(code, interval);
     }
@@ -182,6 +283,12 @@ class RoomManager {
         if (unsub) {
           unsub();
           this.firebaseUnsubscribers.delete(code);
+        }
+
+        const es = this.eventSources.get(code);
+        if (es) {
+          es.close();
+          this.eventSources.delete(code);
         }
 
         const poll = this.pollIntervals.get(code);
@@ -307,6 +414,9 @@ class RoomManager {
       ...room,
       status: "COUNTDOWN",
       currentRoundIndex: 0,
+      roundStartTime: Date.now(),
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
       answers: [],
     };
     this.persistAndBroadcast(code, updated);
@@ -327,6 +437,8 @@ class RoomManager {
       currentRoundIndex: roundIndex,
       roundTimer: timeLimit,
       roundStartTime: Date.now(),
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
       answers: room.answers.filter((a) => a.roundId !== round?.id),
     };
     this.persistAndBroadcast(code, updated);
@@ -341,53 +453,56 @@ class RoomManager {
   }
 
   public submitAnswer(code: string, answer: PlayerAnswer) {
-    const room = this.rooms.get(code);
-    if (!room) return;
+    let room = this.rooms.get(code) || this.getLocalRoom(code);
 
-    // Prevent duplicate submission for same round
-    const existingIdx = room.answers.findIndex(
-      (a) => a.playerId === answer.playerId && a.roundId === answer.roundId
-    );
-    if (existingIdx >= 0) return;
+    if (room) {
+      // Prevent duplicate submission for same round
+      const existingIdx = room.answers.findIndex(
+        (a) => a.playerId === answer.playerId && a.roundId === answer.roundId
+      );
+      if (existingIdx >= 0) return;
 
-    sounds.playSelect();
+      sounds.playSelect();
 
-    // Calculate score if points awarded
-    let updatedPlayers = room.players;
-    if (answer.pointsAwarded && answer.pointsAwarded > 0) {
-      updatedPlayers = room.players.map((p) => {
-        if (p.id === answer.playerId) {
-          return { ...p, score: p.score + (answer.pointsAwarded || 0) };
-        }
-        return p;
-      });
+      // Calculate score if points awarded
+      let updatedPlayers = room.players;
+      if (answer.pointsAwarded && answer.pointsAwarded > 0) {
+        updatedPlayers = room.players.map((p) => {
+          if (p.id === answer.playerId) {
+            return { ...p, score: p.score + (answer.pointsAwarded || 0) };
+          }
+          return p;
+        });
+      }
+
+      const updatedAnswers = [...room.answers, answer];
+      const updated: RoomState = {
+        ...room,
+        players: updatedPlayers,
+        answers: updatedAnswers,
+      };
+
+      // Update local memory and notify listeners
+      this.rooms.set(code, updated);
+      this.notifyListeners(code, updated);
+
+      // Broadcast NEW_ANSWER to cross-tab Host without wiping room status
+      const ch = this.getChannel(code);
+      if (ch) {
+        ch.postMessage({ type: "NEW_ANSWER", answer });
+      }
+    } else {
+      sounds.playSelect();
     }
 
-    const updatedAnswers = [...room.answers, answer];
-    const updated: RoomState = {
-      ...room,
-      players: updatedPlayers,
-      answers: updatedAnswers,
-    };
-
-    // If all players answered, automatically show results
-    const currentRound = ACTIVITIES.find((a) => a.slug === room.activitySlug)?.rounds?.[room.currentRoundIndex];
-    if (
-      currentRound &&
-      room.players.length > 0 &&
-      updatedAnswers.filter((a) => a.roundId === currentRound.id).length >= room.players.length
-    ) {
-      updated.status = "ROUND_RESULTS";
-      sounds.playSuccess();
-    }
-
-    this.persistAndBroadcast(code, updated);
-
-    // Sync answer to server API
-    if (typeof window !== "undefined" && !room.isDemo) {
+    // Sync answer to server API (only submits the answer, does NOT overwrite room state)
+    if (typeof window !== "undefined" && !room?.isDemo) {
       fetch(`/api/rooms/${code}/answers`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+        },
         body: JSON.stringify(answer),
       }).catch(() => {});
     }
@@ -401,6 +516,8 @@ class RoomManager {
     const updated: RoomState = {
       ...room,
       status: "ROUND_RESULTS",
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
     };
     this.persistAndBroadcast(code, updated);
   }
@@ -420,6 +537,8 @@ class RoomManager {
       const updated: RoomState = {
         ...room,
         status: "FINAL_CELEBRATION",
+        lastUpdatedAt: Date.now(),
+        version: (room.version || 0) + 1,
       };
       this.persistAndBroadcast(code, updated);
     }
@@ -437,6 +556,8 @@ class RoomManager {
       roundTimer: act.rounds?.[0]?.timeLimit || 15,
       answers: [],
       players: room.players.map((p) => ({ ...p, score: 0 })),
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
     };
     this.persistAndBroadcast(code, updated);
   }

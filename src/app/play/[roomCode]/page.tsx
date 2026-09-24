@@ -25,6 +25,7 @@ function PlayRoomContent() {
   const [hasAnswered, setHasAnswered] = useState<boolean>(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [textInput, setTextInput] = useState<string>("");
+  const [secondsLeft, setSecondsLeft] = useState<number>(15);
 
   useEffect(() => {
     if (!roomCode) return;
@@ -51,12 +52,17 @@ function PlayRoomContent() {
       });
     }
 
-    const initial = roomManager.getOrCreateRoom(roomCode);
-    setRoom(initial);
-    const act = getActivityBySlug(initial.activitySlug) || ACTIVITIES[0];
-    setActivity(act);
+    // Load existing room locally without creating a dummy one
+    const local = roomManager.getLocalRoom(roomCode);
+    if (local) {
+      setRoom(local);
+      const act = getActivityBySlug(local.activitySlug) || ACTIVITIES[0];
+      setActivity(act);
+    }
 
+    // Subscribe to updates (will fetch from server if not found in memory)
     const unsubscribe = roomManager.subscribe(roomCode, (updated) => {
+      if (!updated) return;
       setRoom({ ...updated });
       if (updated.activitySlug) {
         const a = getActivityBySlug(updated.activitySlug);
@@ -67,32 +73,74 @@ function PlayRoomContent() {
     return () => unsubscribe();
   }, [roomCode, urlPlayerId]);
 
+  const fallbackRound: ActivityRound = {
+    id: `${activity?.id || "act"}-round-${(room?.currentRoundIndex || 0) + 1}`,
+    roundNumber: (room?.currentRoundIndex || 0) + 1,
+    promptAr: activity?.descriptionAr || activity?.titleAr || "استعد للجولة",
+    subtitleAr: activity?.taglineAr,
+    timeLimit: 30,
+    optionsAr: ["أنجزت المهمة وتحدثت مع الزميل 👍", "جاهز للجولة التالية 🚀"],
+  };
+  const rounds = (activity?.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
+  const currentRound = (room && rounds[room.currentRoundIndex]) || rounds[0] || fallbackRound;
+
+  // Accurately synchronize answering state with room.answers
   useEffect(() => {
-    setHasAnswered(false);
-    setSelectedOption(null);
-    setTextInput("");
-  }, [room?.currentRoundIndex, room?.status]);
+    if (!room || !currentPlayer || !currentRound || room.status !== "PLAYING_ROUND") {
+      setHasAnswered(false);
+      setSelectedOption(null);
+      setTextInput("");
+      return;
+    }
+
+    const myAns = room.answers?.find(
+      (a) => a.playerId === currentPlayer.id && a.roundId === currentRound.id
+    );
+
+    if (myAns) {
+      setHasAnswered(true);
+      if (typeof myAns.answer === "number") {
+        setSelectedOption(myAns.answer);
+      } else if (typeof myAns.answer === "string") {
+        setTextInput(myAns.answer);
+      }
+    } else {
+      setHasAnswered(false);
+      setSelectedOption(null);
+      setTextInput("");
+    }
+  }, [room?.currentRoundIndex, room?.status, room?.answers, currentPlayer?.id, currentRound?.id]);
+
+  // Synchronized countdown timer based on roundStartTime
+  useEffect(() => {
+    if (room?.status === "PLAYING_ROUND" && room.roundStartTime) {
+      const updateTimer = () => {
+        const elapsed = Math.floor((Date.now() - (room.roundStartTime || Date.now())) / 1000);
+        const limit = currentRound?.timeLimit || room.roundTimer || 15;
+        const remaining = Math.max(0, limit - elapsed);
+        setSecondsLeft(remaining);
+      };
+      updateTimer();
+      const interval = setInterval(updateTimer, 500);
+      return () => clearInterval(interval);
+    } else {
+      setSecondsLeft(room?.roundTimer || 15);
+    }
+  }, [room?.status, room?.roundStartTime, room?.roundTimer, currentRound?.timeLimit]);
 
   if (!room || !activity) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-slate-800 font-arabic">
-        <div className="text-center p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
-          <div className="text-xl font-bold">جاري الاتصال بالغرفة {roomCode}...</div>
+        <div className="text-center p-6 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
+          <div className="w-10 h-10 rounded-2xl bg-orange-50 text-spark-flame flex items-center justify-center mx-auto animate-spin text-xl">
+            ⚡
+          </div>
+          <div className="text-base font-bold">جاري الاتصال بالغرفة {roomCode}...</div>
+          <p className="text-xs text-slate-400">نظام المزامنة الفورية نشط</p>
         </div>
       </div>
     );
   }
-
-  const fallbackRound: ActivityRound = {
-    id: `${activity.id}-round-${(room.currentRoundIndex || 0) + 1}`,
-    roundNumber: (room.currentRoundIndex || 0) + 1,
-    promptAr: activity.descriptionAr || activity.titleAr,
-    subtitleAr: activity.taglineAr,
-    timeLimit: 30,
-    optionsAr: ["أنجزت المهمة وتحدثت مع الزميل 👍", "جاهز للجولة التالية 🚀"],
-  };
-  const rounds = (activity.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
-  const currentRound = rounds[room.currentRoundIndex] || rounds[0] || fallbackRound;
 
   const handleSubmitChoice = (optionIndex: number) => {
     if (hasAnswered || !currentPlayer || !currentRound) return;
@@ -205,12 +253,12 @@ function PlayRoomContent() {
 
         {/* 3. ACTIVE PLAYING ROUND */}
         {room.status === "PLAYING_ROUND" && currentRound && (
-          <div className="space-y-4 animate-scale-in w-full">
+          <div key={`round-view-${currentRound.id}`} className="space-y-4 animate-scale-in w-full">
             <div className="flex items-center justify-between text-xs font-bold text-slate-500 pb-2 border-b border-slate-200">
               <span>جولة {room.currentRoundIndex + 1} من {activity.rounds?.length || 1}</span>
               <div className="flex items-center gap-1.5 text-spark-flame font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200">
                 <Clock className="w-3.5 h-3.5" />
-                <span>00:{room.roundTimer < 10 ? `0${room.roundTimer}` : room.roundTimer}</span>
+                <span>00:{secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}</span>
               </div>
             </div>
 
@@ -250,9 +298,10 @@ function PlayRoomContent() {
 
                       return (
                         <button
-                          key={optIdx}
+                          key={`${currentRound.id}-opt-${optIdx}`}
+                          type="button"
                           onClick={() => handleSubmitChoice(optIdx)}
-                          className={`w-full p-5 sm:p-6 rounded-2xl bg-gradient-to-r ${colorClass} text-white font-bold text-base sm:text-lg text-right active:scale-98 transition-transform shadow-md flex items-center justify-between`}
+                          className={`w-full p-5 sm:p-6 rounded-2xl bg-gradient-to-r ${colorClass} text-white font-bold text-base sm:text-lg text-right active:scale-98 transition-transform shadow-md flex items-center justify-between touch-manipulation cursor-pointer select-none`}
                         >
                           <span>{opt}</span>
                           <span className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm font-mono font-bold">

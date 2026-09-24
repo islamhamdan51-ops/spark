@@ -79,31 +79,61 @@ export default function HostRoomPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [room, activity]);
 
-  // Round Timer effect
+  const fallbackRound: ActivityRound = {
+    id: `${activity?.id || "act"}-round-${(room?.currentRoundIndex || 0) + 1}`,
+    roundNumber: (room?.currentRoundIndex || 0) + 1,
+    promptAr: activity?.descriptionAr || activity?.titleAr || "استعد للجولة",
+    subtitleAr: activity?.taglineAr,
+    timeLimit: 30,
+    optionsAr: ["تم إنجاز التحدي بنجاح! 👏", "مستمرون في التفاعل والنقاش 💡"],
+  };
+
+  const rounds = (activity?.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
+  const currentRound = (room && rounds[room.currentRoundIndex]) || rounds[0] || fallbackRound;
+  const roundAnswers = room?.answers?.filter((a) => a.roundId === currentRound?.id) || [];
+
+  const [secondsLeft, setSecondsLeft] = useState<number>(15);
+
+  // Synchronized Round Timer effect using roundStartTime
   useEffect(() => {
     if (room?.status === "PLAYING_ROUND") {
+      const updateTimer = () => {
+        const elapsed = Math.floor((Date.now() - (room.roundStartTime || Date.now())) / 1000);
+        const limit = currentRound?.timeLimit || room.roundTimer || 15;
+        const remaining = Math.max(0, limit - elapsed);
+        setSecondsLeft(remaining);
+
+        if (remaining <= 0) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          roomManager.showRoundResults(roomCode);
+        } else if (remaining <= 4) {
+          sounds.playTick(false);
+        }
+      };
+
+      updateTimer();
       if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        setRoom((prev) => {
-          if (!prev || prev.status !== "PLAYING_ROUND") return prev;
-          if (prev.roundTimer <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            roomManager.showRoundResults(roomCode);
-            return { ...prev, roundTimer: 0, status: "ROUND_RESULTS" };
-          }
-          if (prev.roundTimer <= 4) {
-            sounds.playTick(false);
-          }
-          return { ...prev, roundTimer: prev.roundTimer - 1 };
-        });
-      }, 1000);
+      timerRef.current = setInterval(updateTimer, 500);
     } else {
+      setSecondsLeft(room?.roundTimer || 15);
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [room?.status, roomCode]);
+  }, [room?.status, room?.roundStartTime, room?.roundTimer, currentRound?.timeLimit, roomCode]);
+
+  // Clean transition when all connected players have answered
+  useEffect(() => {
+    if (room?.status !== "PLAYING_ROUND" || !currentRound || room.players.length === 0) return;
+    const answeredCount = room.answers?.filter((a) => a.roundId === currentRound.id).length || 0;
+    if (answeredCount >= room.players.length) {
+      const timeout = setTimeout(() => {
+        roomManager.showRoundResults(roomCode);
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [room?.status, room?.answers?.length, room?.players?.length, currentRound?.id, roomCode]);
 
   // Stopwatch for non-phone facilitation activities
   useEffect(() => {
@@ -195,19 +225,6 @@ export default function HostRoomPage() {
     // Navigate with new activity parameter or update room state
     window.location.href = `/host/${roomCode}`;
   };
-
-  const fallbackRound: ActivityRound = {
-    id: `${activity.id}-round-${(room.currentRoundIndex || 0) + 1}`,
-    roundNumber: (room.currentRoundIndex || 0) + 1,
-    promptAr: activity.descriptionAr || activity.titleAr,
-    subtitleAr: activity.taglineAr,
-    timeLimit: 30,
-    optionsAr: ["تم إنجاز التحدي بنجاح! 👏", "مستمرون في التفاعل والنقاش 💡"],
-  };
-
-  const rounds = (activity.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
-  const currentRound = rounds[room.currentRoundIndex] || rounds[0] || fallbackRound;
-  const roundAnswers = room.answers.filter((a) => a.roundId === currentRound?.id);
 
   return (
     <div
@@ -406,7 +423,7 @@ export default function HostRoomPage() {
 
         {/* 3. ACTIVE PLAYING ROUND */}
         {room.status === "PLAYING_ROUND" && currentRound && (
-          <div className="w-full max-w-4xl space-y-6 animate-scale-in">
+          <div key={`host-round-view-${currentRound.id}`} className="w-full max-w-4xl space-y-6 animate-scale-in">
             
             {/* Header info bar */}
             <div className="flex items-center justify-between bg-white px-6 py-3.5 rounded-2xl border border-slate-200 shadow-xs">
@@ -416,9 +433,9 @@ export default function HostRoomPage() {
 
               {/* Timer */}
               <div className="flex items-center gap-2">
-                <Clock className={`w-5 h-5 ${room.roundTimer <= 4 ? "text-red-600 animate-ping" : "text-spark-flame"}`} />
-                <span className={`text-2xl font-black font-mono ${room.roundTimer <= 4 ? "text-red-600" : "text-slate-900"}`}>
-                  00:{room.roundTimer < 10 ? `0${room.roundTimer}` : room.roundTimer}
+                <Clock className={`w-5 h-5 ${secondsLeft <= 4 ? "text-red-600 animate-ping" : "text-spark-flame"}`} />
+                <span className={`text-2xl font-black font-mono ${secondsLeft <= 4 ? "text-red-600" : "text-slate-900"}`}>
+                  00:{secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}
                 </span>
               </div>
 
@@ -446,7 +463,7 @@ export default function HostRoomPage() {
                     const optAnswers = roundAnswers.filter((a) => a.answer === optIdx);
                     return (
                       <div
-                        key={optIdx}
+                        key={`${currentRound.id}-opt-${optIdx}`}
                         className={`p-6 rounded-2xl border text-right transition-all relative overflow-hidden ${
                           optIdx === 0
                             ? "border-orange-200 bg-orange-50/70"
@@ -588,7 +605,7 @@ export default function HostRoomPage() {
                   const isCorrect = currentRound.correctAnswer !== undefined && currentRound.correctAnswer === optIdx;
 
                   return (
-                    <div key={optIdx} className="space-y-1.5">
+                    <div key={`${currentRound.id}-res-${optIdx}`} className="space-y-1.5">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-slate-900 flex items-center gap-1.5">
                           {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}

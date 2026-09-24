@@ -4,13 +4,19 @@ import { PlayerAnswer } from "@/types";
 
 export const dynamic = "force-dynamic";
 
+const antiCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  "Pragma": "no-cache",
+  "Expires": "0",
+};
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { code: string } }
 ) {
   const code = params.code?.trim();
   if (!code) {
-    return NextResponse.json({ success: false, error: "Missing room code" }, { status: 400 });
+    return NextResponse.json({ success: false, error: "Missing room code" }, { status: 400, headers: antiCacheHeaders });
   }
 
   try {
@@ -18,7 +24,7 @@ export async function POST(
     if (!answer || !answer.playerId || !answer.roundId) {
       return NextResponse.json(
         { success: false, error: "Invalid answer payload" },
-        { status: 400 }
+        { status: 400, headers: antiCacheHeaders }
       );
     }
 
@@ -26,12 +32,12 @@ export async function POST(
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: "تعذر تسجيل الإجابة، الغرفة غير نشطة" },
-        { status: 404 }
+        { status: 404, headers: antiCacheHeaders }
       );
     }
 
-    return NextResponse.json({ success: true, room: result.room });
+    return NextResponse.json({ success: true, room: result.room }, { headers: antiCacheHeaders });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: err.message }, { status: 500, headers: antiCacheHeaders });
   }
 }

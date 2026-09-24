@@ -168,6 +168,8 @@ export interface RoomState {
   isDemo: boolean;
   createdAt: number;
   soundEnabled: boolean;
+  version?: number;
+  lastUpdatedAt?: number;
 }
 
 export interface WizardAnswers {
