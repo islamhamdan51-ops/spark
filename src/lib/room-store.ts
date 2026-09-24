@@ -16,6 +16,7 @@ class RoomManager {
   private rooms: Map<string, RoomState> = new Map();
   private listeners: Map<string, Set<RoomListener>> = new Map();
   private firebaseUnsubscribers: Map<string, () => void> = new Map();
+  private pollIntervals: Map<string, NodeJS.Timeout> = new Map();
   private channels: Map<string, BroadcastChannel> = new Map();
   private cancelSimAnswers: (() => void) | null = null;
 
@@ -61,7 +62,16 @@ class RoomManager {
       writeFirebaseRoomState(code, state).catch(() => {});
     }
 
-    // 2. Local fallback sync
+    // 2. Sync to Server API (ensures cross-device sync on Vercel even without Firebase)
+    if (typeof window !== "undefined" && !state.isDemo) {
+      fetch(`/api/rooms/${code}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state),
+      }).catch(() => {});
+    }
+
+    // 3. Local fallback sync
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem(`spark_room_state_${code}`, JSON.stringify(state));
@@ -125,7 +135,7 @@ class RoomManager {
       listener(current);
     }
 
-    // Subscribe to Firebase Realtime updates for live multiplayer
+    // 1. Subscribe to Firebase Realtime updates for live multiplayer if configured
     if (isFirebaseConfigured() && !this.firebaseUnsubscribers.has(code) && !current?.isDemo) {
       const unsub = subscribeToFirebaseRoom(code, (remoteRoom) => {
         if (remoteRoom) {
@@ -136,6 +146,35 @@ class RoomManager {
       this.firebaseUnsubscribers.set(code, unsub);
     }
 
+    // 2. Cross-device Server Polling fallback when Firebase is not active
+    if (!isFirebaseConfigured() && typeof window !== "undefined" && !current?.isDemo && !this.pollIntervals.has(code)) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/rooms/${code}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.room) {
+              const prev = this.rooms.get(code);
+              // Only notify if something meaningful changed
+              const changed =
+                !prev ||
+                prev.status !== data.room.status ||
+                prev.currentRoundIndex !== data.room.currentRoundIndex ||
+                prev.players.length !== data.room.players.length ||
+                prev.answers.length !== data.room.answers.length;
+
+              if (changed) {
+                this.rooms.set(code, data.room);
+                this.notifyListeners(code, data.room);
+              }
+            }
+          }
+        } catch {}
+      }, 1200);
+
+      this.pollIntervals.set(code, interval);
+    }
+
     return () => {
       this.listeners.get(code)?.delete(listener);
       if (this.listeners.get(code)?.size === 0) {
@@ -143,6 +182,12 @@ class RoomManager {
         if (unsub) {
           unsub();
           this.firebaseUnsubscribers.delete(code);
+        }
+
+        const poll = this.pollIntervals.get(code);
+        if (poll) {
+          clearInterval(poll);
+          this.pollIntervals.delete(code);
         }
       }
     };
@@ -158,9 +203,41 @@ class RoomManager {
     nickname: string,
     avatar: string
   ): Promise<{ success: boolean; player?: Player; error?: string }> {
-    let room = this.rooms.get(code);
+    const trimmed = nickname.trim();
+    if (!trimmed) {
+      return { success: false, error: "الرجاء إدخال اسم مستعار" };
+    }
 
-    // If room not in local memory, check Firebase
+    // 1. Try Server API join first (vital for mobile participants joining Vercel host!)
+    if (typeof window !== "undefined") {
+      try {
+        const res = await fetch(`/api/rooms/${code}/players`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nickname: trimmed, avatar: avatar || "⚡" }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.player) {
+            if (data.room) {
+              this.rooms.set(code, data.room);
+              this.notifyListeners(code, data.room);
+              try {
+                localStorage.setItem(`spark_room_state_${code}`, JSON.stringify(data.room));
+              } catch {}
+            }
+            sounds.playJoin();
+            return { success: true, player: data.player };
+          }
+        }
+      } catch (err) {
+        console.warn("Server API addPlayer warning, falling back to local/firebase", err);
+      }
+    }
+
+    // 2. If room not in local memory, check Firebase
+    let room = this.rooms.get(code);
     if (!room && isFirebaseConfigured()) {
       const remote = await fetchFirebaseRoom(code);
       if (remote) {
@@ -169,26 +246,22 @@ class RoomManager {
       }
     }
 
-    if (!room) {
-      // Check localStorage as last local resort
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(`spark_room_state_${code}`);
-        if (saved) {
-          try {
-            room = JSON.parse(saved);
-            if (room) this.rooms.set(code, room);
-          } catch {}
-        }
+    // 3. Check localStorage as local resort
+    if (!room && typeof window !== "undefined") {
+      const saved = localStorage.getItem(`spark_room_state_${code}`);
+      if (saved) {
+        try {
+          room = JSON.parse(saved);
+          if (room) this.rooms.set(code, room);
+        } catch {}
       }
     }
 
     if (!room) {
-      return { success: false, error: "الغرفة غير موجودة أو لم تبدأ بعد. تأكد من الرمز." };
-    }
-
-    const trimmed = nickname.trim();
-    if (!trimmed) {
-      return { success: false, error: "الرجاء إدخال اسم مستعار" };
+      return {
+        success: false,
+        error: "الغرفة غير موجودة أو لم تبدأ بعد. تأكد من أن المضيف قد فتح الغرفة على الشاشة.",
+      };
     }
 
     const exists = room.players.some((p) => p.nickname.toLowerCase() === trimmed.toLowerCase());
@@ -199,7 +272,7 @@ class RoomManager {
     const newPlayer: Player = {
       id: `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       nickname: trimmed,
-      avatar,
+      avatar: avatar || "⚡",
       joinedAt: Date.now(),
       score: 0,
     };
@@ -258,11 +331,9 @@ class RoomManager {
     };
     this.persistAndBroadcast(code, updated);
 
-    // If demo mode, start realistic answer simulation
+    // Simulate answers if demo room
     if (room.isDemo && round) {
-      if (this.cancelSimAnswers) {
-        this.cancelSimAnswers();
-      }
+      if (this.cancelSimAnswers) this.cancelSimAnswers();
       this.cancelSimAnswers = simulateRoundAnswers(round, room.players, (ans) => {
         this.submitAnswer(code, ans);
       });
@@ -311,6 +382,15 @@ class RoomManager {
     }
 
     this.persistAndBroadcast(code, updated);
+
+    // Sync answer to server API
+    if (typeof window !== "undefined" && !room.isDemo) {
+      fetch(`/api/rooms/${code}/answers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(answer),
+      }).catch(() => {});
+    }
   }
 
   public showRoundResults(code: string) {
