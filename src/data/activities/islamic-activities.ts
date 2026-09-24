@@ -1,0 +1,546 @@
+import { Activity } from "@/types";
+import { QURAN_QUESTION_BANK } from "../questions/quran-questions";
+import { ISLAMIC_VALUES_BANK } from "../questions/islamic-values-scenarios";
+
+export const ISLAMIC_ACTIVITIES: Activity[] = [
+  // 1. QURAN CHALLENGE: COMPLETE THE AYAH & SURAH (Flagship Playable)
+  {
+    id: "act-quran-challenge",
+    slug: "quran-challenge",
+    titleAr: "تحدي القرآن الكريم (نور وبيان)",
+    titleEn: "Quran Knowledge & Reflection",
+    taglineAr: "أكمل الآية، تعرف على السورة، واكتشف المعاني العظيمة لكتاب الله!",
+    descriptionAr: "مسابقة قرآنية موثقة ودقيقة. جولات تفاعلية تختبر حفظ الآيات الكريمة، وفهم معاني المفردات، ومعرفة السور، مع عرض السورة ورقم الآية والتفسير الميسر.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 10,
+    maxAge: 99,
+    minPlayers: 3,
+    maxPlayers: 100,
+    duration: 10,
+    energy: "medium",
+    goal: "faith",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "BookOpen",
+    accentColor: "#10B981",
+    faithContent: true,
+    educationContent: true,
+    tags: ["faith", "quran", "islamic", "knowledge", "reflection"],
+    whyRecommended: "مبني على نصوص قرآنية محققة وموثقة بالسورة ورقم الآية، يجمع بين متعة التنافس وأجر التدبر.",
+    instructions: {
+      overviewAr: "تظهر الآية الكريمة أو السؤال القرآني مع 4 خيارات ومؤقت سريع، وعند ظهور الإجابة يُعرض اسم السورة ورقم الآية وتفسيرها.",
+      hostAr: [
+        "شجع المتسابقين على التريث واستحضار معاني الآيات العظيمة.",
+        "اقرأ الآية بصوت خاشع ومتقن بعد ظهور الإجابة لتثبيت الفائدة في قلوب الحاضرين."
+      ],
+      participantAr: [
+        "اقرأ الآية بعناية واختر الكلمة الصحيحة لاستكمال المعنى."
+      ]
+    },
+    rounds: QURAN_QUESTION_BANK.map((q, idx) => ({
+      id: `quran-r-${idx + 1}`,
+      roundNumber: idx + 1,
+      promptAr: q.promptAr,
+      subtitleAr: `${q.subtitleAr} (سورة ${q.surah} - آية ${q.ayah})`,
+      optionsAr: q.optionsAr,
+      correctAnswer: q.correctAnswer,
+      timeLimit: q.timeLimit,
+    }))
+  },
+
+  // 2. ISLAMIC VALUES & NOBLE CHARACTER SCENARIOS (Flagship Playable)
+  {
+    id: "act-islamic-values-scenarios",
+    slug: "islamic-values-scenarios",
+    titleAr: "مواقف وأخلاق (ميزان القيم)",
+    titleEn: "Islamic Ethics & Scenarios",
+    taglineAr: "مواقف واقعية من حياتنا اليومية.. ما هو التصرف الأقرب لهدي الإسلام؟",
+    descriptionAr: "سيناريوهات قرارات عملية في الصدق، الأمانة، كظم الغيظ، الرحمة، والتعاون. يصوت المشاركون على الخيار الأفضل مع وقفة تدبر نبوية ملهمة.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 12,
+    maxAge: 99,
+    minPlayers: 3,
+    maxPlayers: 80,
+    duration: 10,
+    energy: "calm",
+    goal: "faith",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: false,
+    cooperative: true,
+    isPlayable: true,
+    iconName: "HeartHandshake",
+    accentColor: "#059669",
+    faithContent: true,
+    tags: ["faith", "values", "ethics", "scenarios", "reflection"],
+    whyRecommended: "يحول القيم الإسلامية من مجرد تنظير إلى مواقف وسلوكيات حية نعيشها في العمل والشارع والبيت.",
+    instructions: {
+      overviewAr: "يعرض الموقف الواقعي ويختار كل مشارك التصرف الذي يراه الأقرب للإحسان ومروءة المسلم.",
+      hostAr: [
+        "ادعُ الحاضرين للنقاش حول سبب اختيارهم قبل كشف الأثر والحديث النبوي الشريف.",
+        "اجعل الأجواء ودية بعيدة عن إصدار الأحكام السلبية."
+      ],
+      participantAr: [
+        "ضع نفسك مكان صاحب الموقف وفكر: ماذا كان سيفعل قدوتنا رسول الله ﷺ؟"
+      ]
+    },
+    rounds: ISLAMIC_VALUES_BANK.map((v, idx) => ({
+      id: `val-r-${idx + 1}`,
+      roundNumber: idx + 1,
+      promptAr: v.promptAr,
+      subtitleAr: `${v.subtitleAr} (خُلق الـ${v.theme})`,
+      optionsAr: v.optionsAr,
+      correctAnswer: v.bestChoiceIndex,
+      timeLimit: v.timeLimit,
+    }))
+  },
+
+  // 3. SEERAH JOURNEY (Prophetic Milestones)
+  {
+    id: "act-seerah-journey",
+    slug: "seerah-journey",
+    titleAr: "رحلة مع السيرة النبوية",
+    titleEn: "Prophetic Seerah Journey",
+    taglineAr: "محطات ملهمة من حياة الحبيب المصطفى ﷺ وأصحابه الكرام!",
+    descriptionAr: "مسابقة تفاعلية تستعرض الأحداث التاريخية والمواقف الإنسانية الخالدة في مكة والمدينة، بأسلوب مشوق يرسخ محبة النبي ﷺ في النفوس.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 12,
+    maxAge: 99,
+    minPlayers: 4,
+    maxPlayers: 60,
+    duration: 10,
+    energy: "medium",
+    goal: "faith",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "Compass",
+    accentColor: "#047857",
+    faithContent: true,
+    educationContent: true,
+    tags: ["seerah", "prophet", "history", "faith", "islamic"],
+    whyRecommended: "يربط الأجيال بسيرة النبي ﷺ وصحابته بأسلوب معاصر وممتع.",
+    instructions: {
+      overviewAr: "أسئلة حول محطات الهجرة، الغزوات الكبرى، وأخلاق النبي ﷺ في التعامل مع الناس.",
+      hostAr: ["سلط الضوء على الدروس والعبر المستفادة من كل موقف تاريخي."],
+      participantAr: ["استحضر عظمة السيرة وأجب بسرعة واعتزاز."]
+    },
+    rounds: [
+      {
+        id: "seer-1",
+        roundNumber: 1,
+        promptAr: "من هو الصحابي الجليل الذي رافق النبي ﷺ في رحلة الهجرة النبوية المباركة واختبأ معه في الغار؟",
+        subtitleAr: "ثاني اثنين إذ هما في الغار",
+        optionsAr: [
+          "أبو بكر الصديق رضي الله عنه",
+          "عمر بن الخطاب رضي الله عنه",
+          "علي بن أبي طالب رضي الله عنه",
+          "عثمان بن عفان رضي الله عنه"
+        ],
+        correctAnswer: 0,
+        timeLimit: 15,
+      },
+      {
+        id: "seer-2",
+        roundNumber: 2,
+        promptAr: "ما هو أول مسجد بني في الإسلام عند وصول النبي ﷺ إلى مشارف المدينة المنورة؟",
+        subtitleAr: "محطة الوصول الأولى",
+        optionsAr: ["مسجد قباء", "المسجد النبوي", "مسجد القبلتين", "مسجد الجمعة"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      },
+      {
+        id: "seer-3",
+        roundNumber: 3,
+        promptAr: "في أي غزوة من الغزوات نزل الأمر الإلهي بحفر الخندق حول المدينة المنورة بإشارة من سلمان الفارسي رضي الله عنه؟",
+        subtitleAr: "غزوة الأحزاب",
+        optionsAr: ["غزوة الخندق (الأحزاب)", "غزوة بدر الكبرى", "غزوة أحد", "غزوة حنين"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      }
+    ]
+  },
+
+  // 4. HADITH & WISDOM (Sayings of the Prophet)
+  {
+    id: "act-hadith-wisdom",
+    slug: "hadith-wisdom",
+    titleAr: "جوامع الكلم (حديث وحكمة)",
+    titleEn: "Prophetic Hadiths & Wisdom",
+    taglineAr: "أكمل الحديث النبوي الشريف وتأمل في بلاغته وأثره العظيم!",
+    descriptionAr: "مسابقة تركز على الأحاديث الجامعة في الآداب، والعمل، والأخلاق، والتعاملات الإنسانية.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 12,
+    maxAge: 99,
+    minPlayers: 4,
+    maxPlayers: 50,
+    duration: 8,
+    energy: "medium",
+    goal: "faith",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "Award",
+    accentColor: "#059669",
+    faithContent: true,
+    tags: ["hadith", "sunnah", "ethics", "wisdom", "faith"],
+    whyRecommended: "أحاديث قصيرة وبليغة يسهل حفظها واستحضارها في الحياة اليومية.",
+    instructions: {
+      overviewAr: "تظهر بداية الحديث الشريف ويختار المتسابق التكملة الصحيحة المروية في كتب السنة المعتمدة.",
+      hostAr: ["بين راوي الحديث وفقهه المختصر بعد كل جولة."],
+      participantAr: ["اختر الكلمة النبوية الأصح والأدق رواية."]
+    },
+    rounds: [
+      {
+        id: "had-1",
+        roundNumber: 1,
+        promptAr: "أكمل الحديث الصحيح: قال رسول الله ﷺ: 'إنما بعثت لأتمم ...'",
+        optionsAr: ["مكارم الأخلاق (صالح الأخلاق)", "شرائع الدين", "فرائض الإسلام", "أحكام القضاء"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      },
+      {
+        id: "had-2",
+        roundNumber: 2,
+        promptAr: "أكمل الحديث الشريف: 'المؤمن القوي خير وأحب إلى الله من ...'",
+        optionsAr: ["المؤمن الضعيف، وفي كلٍّ خير", "الرجل الغني", "العالم الزاهد", "العابد الصامت"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      }
+    ]
+  },
+
+  // 5. TADDABUR & GRATITUDE (Reflective Circle - Facilitator)
+  {
+    id: "act-tadabbur-gratitude",
+    slug: "tadabbur-gratitude",
+    titleAr: "دائرة التدبر والامتنان",
+    titleEn: "Tadabbur & Gratitude Circle",
+    taglineAr: "وقفات هادئة لاستشعار نعم الله الخفية وتجديد الشكر القلبي.",
+    descriptionAr: "نشاط روحي وتأملي يعيد شحن طاقة الروح. يطرح الميسر نعم الله العظمى (نعمة السمع والبصر، الأهل، الأمان، التوفيق) ليشارك كل فرد أمراً ملموساً يشكر الله عليه من أعماق قلبه اليوم.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 14,
+    maxAge: 99,
+    minPlayers: 4,
+    maxPlayers: 30,
+    duration: 15,
+    energy: "calm",
+    goal: "faith",
+    type: "DISCUSSION_STARTER",
+    requiresPhone: false,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: false,
+    cooperative: true,
+    isPlayable: true,
+    iconName: "Moon",
+    accentColor: "#0284C7",
+    faithContent: true,
+    tags: ["gratitude", "shukr", "reflection", "calm", "faith"],
+    whyRecommended: "يبث السكينة والطمأنينة في القلوب ويذكر بالنعم التي نألفها ونغفل عن شكرها.",
+    instructions: {
+      overviewAr: "تظهر آية الامتنان، ويتناوب المشاركون في دائرة هادئة على ذكر نعمة خاصة يمتنون لوجودها.",
+      hostAr: [
+        "ابدأ بقوله تعالى: ﴿وَإِن تَعُدُّوا نِعْمَةَ اللَّهِ لَا تُحْصُوهَا﴾.",
+        "أتح دقيقة هدوء قبل بدء المشاركات ليعيش كل فرد التجربة بقلبه."
+      ],
+      participantAr: ["تحدث بصدق وشارك نعمة تلامس قلبك هذا الأسبوع."]
+    },
+    rounds: [
+      {
+        id: "tad-1",
+        roundNumber: 1,
+        promptAr: "تأمل في قوله تعالى: ﴿وَأَسْبَغَ عَلَيْكُمْ نِعَمَهُ ظَاهِرَةً وَبَاطِنَةً﴾ — ما هي النعمة الباطنة أو المعنوية التي تستشعر فضل الله بها عليك اليوم؟",
+        subtitleAr: "نعمة التوفيق، الهداية، راحة البال، الستر، الصحة...",
+        timeLimit: 120,
+        optionsAr: ["تأملنا في نعم الله وله الحمد والشكر 🌿", "شاركنا مشاعر امتنان عميقة ❤️"],
+      }
+    ]
+  },
+
+  // 6. ISLAMIC CULTURAL TRIVIA (History & Milestones)
+  {
+    id: "act-islamic-civilization",
+    slug: "islamic-civilization",
+    titleAr: "روائع الحضارة الإسلامية",
+    titleEn: "Islamic Civilization & Heritage",
+    taglineAr: "اكتشف إنجازات العلماء، المدن التاريخية، وعلوم الحضارة الإسلامية!",
+    descriptionAr: "مسابقة تثقيفية حول بيت الحكمة في بغداد، أطباء وعلماء المسلمين (ابن سينا، الخوارزمي، الزهراوي)، والعمارة الإسلامية الخالدة.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 13,
+    maxAge: 99,
+    minPlayers: 4,
+    maxPlayers: 60,
+    duration: 8,
+    energy: "high",
+    goal: "learning",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "Landmark",
+    accentColor: "#0D9488",
+    faithContent: true,
+    educationContent: true,
+    tags: ["civilization", "history", "heritage", "science", "knowledge"],
+    whyRecommended: "يبني الاعتزاز بالهوية ويبرز مساهمات المسلمين العظمى في خدمة البشرية والعلوم.",
+    instructions: {
+      overviewAr: "أسئلة سريعة حول الطب، الفلك، العمارة، والعلماء المسلمين في العصر الذهبي.",
+      hostAr: ["وضح أثر الاكتشاف على العالم الحديث عند قراءة الإجابة الصحيحة."],
+      participantAr: ["اختر العالم أو المدينة التاريخية الصحيحة بأسرع ما يمكنك!"]
+    },
+    rounds: [
+      {
+        id: "civ-1",
+        roundNumber: 1,
+        promptAr: "من هو العالم المسلم الملقب بـ 'مؤسس علم الجبر' والذي أخذ العالم عنه مصطلح (Algorithm) الخوارزميات؟",
+        optionsAr: ["محمد بن موسى الخوارزمي", "ابن رشد", "البيروني", "ابن الهيثم"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      },
+      {
+        id: "civ-2",
+        roundNumber: 2,
+        promptAr: "ما هو القصر الأندلسي الشهير في غرناطة الذي يعتبر تحفة معمارية إسلامية يقصدها الملايين سنوياً؟",
+        optionsAr: ["قصر الحمراء", "قصر الجعفرية", "قصر إشبيلية", "قصر المورق"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      }
+    ]
+  },
+
+  // 7. COMPANIONS INSPIRATION (Sahabah Knowledge)
+  {
+    id: "act-sahabah-inspiration",
+    slug: "sahabah-inspiration",
+    titleAr: "فرسان الصحابة (قدوة وأثر)",
+    titleEn: "Stories of the Companions",
+    taglineAr: "ألقاب، مواقف بطولية، وتضحيات خالدة لجيل الصحابة الكرام!",
+    descriptionAr: "مسابقة شيقة تتعرف فيها على ألقاب الصحابة ومواقفهم العظيمة (الفاروق، ذو النورين، أمين الأمة، سيف الله المسلول).",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 12,
+    maxAge: 99,
+    minPlayers: 3,
+    maxPlayers: 50,
+    duration: 8,
+    energy: "medium",
+    goal: "faith",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "Shield",
+    accentColor: "#15803D",
+    faithContent: true,
+    tags: ["sahabah", "companions", "faith", "history", "role_models"],
+    whyRecommended: "يقدم قدوات ملهمة من التاريخ ويحيي مواقف البطولة والوفاء في وجدان الفريق.",
+    instructions: {
+      overviewAr: "تظهر مواصفات الصحابي الجليل أو لقبه ويخمن المشاركون اسمه الكريم.",
+      hostAr: ["اربط صفة الصحابي بكيفية تطبيقها في حياتنا اليومية كالأمانة والشجاعة."],
+      participantAr: ["استحضر معلوماتك عن خيرة القرون وأجب بسرعة."]
+    },
+    rounds: [
+      {
+        id: "sah-1",
+        roundNumber: 1,
+        promptAr: "من هو الصحابي الجليل الملقب بـ 'أمين هذه الأمة' بشهادة النبي ﷺ؟",
+        optionsAr: ["أبو عبيدة عامر بن الجراح", "سعد بن أبي وقاص", "عثمان بن عفان", "طلحة بن عبيد الله"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      },
+      {
+        id: "sah-2",
+        roundNumber: 2,
+        promptAr: "من هو الصحابي الملقب بـ 'سيف الله المسلول' والذي لم يُهزم في أي معركة خاضها في الجاهلية والإسلام؟",
+        optionsAr: ["خالد بن الوليد رضي الله عنه", "القعقاع بن عمرو", "حمزة بن عبد المطلب", "الزبير بن العوام"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      }
+    ]
+  },
+
+  // 8. QURANIC VOCABULARY WIT (Linguistic Quran Exploration)
+  {
+    id: "act-quranic-vocabulary",
+    slug: "quranic-vocabulary",
+    titleAr: "مفردات القرآن العظيم",
+    titleEn: "Quranic Vocabulary Treasures",
+    taglineAr: "اكتشف المعاني البلاغية واللغوية النادرة لألفاظ القرآن الكريم!",
+    descriptionAr: "رحلة لغوية دقيقة تكشف معاني كلمات قرآنية قد تخفى على الكثيرين (كالصمد، الفلق، قسورة، ثجاجا، مدهامتان).",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 13,
+    maxAge: 99,
+    minPlayers: 4,
+    maxPlayers: 80,
+    duration: 10,
+    energy: "medium",
+    goal: "learning",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "FileText",
+    accentColor: "#059669",
+    faithContent: true,
+    languageContent: true,
+    tags: ["quran", "vocabulary", "arabic", "tafseer", "language"],
+    whyRecommended: "يثري الحصيلة اللغوية ويعين على تدبر الصلاة وتلاوة القرآن بفهم أعمق.",
+    instructions: {
+      overviewAr: "تظهر الكلمة القرآنية وسياق الآية الكريمة، ويختار المتسابق التفسير اللغوي الدقيق.",
+      hostAr: ["اعرض المعنى البلاغي وأوجه الإعجاز في اختيار اللفظ القرآني دون غيره."],
+      participantAr: ["تأمل في دقة التعبير القرآني واختر المعنى الصحيح."]
+    },
+    rounds: [
+      {
+        id: "qv-1",
+        roundNumber: 1,
+        promptAr: "ما معنى كلمة ﴿قَسْوَرَةٍ﴾ في قوله تعالى: ﴿كَأَنَّهُمْ حُمُرٌ مُّسْتَنفِرَةٌ * فَرَّتْ مِن قَسْوَرَةٍ﴾؟",
+        subtitleAr: "سورة المدثر",
+        optionsAr: ["الأسد المفترس أو الرماة والصيادون", "الريح العاصفة", "النار المشتعلة", "الظلام الحالك"],
+        correctAnswer: 0,
+        timeLimit: 18,
+      },
+      {
+        id: "qv-2",
+        roundNumber: 2,
+        promptAr: "ما معنى كلمة ﴿ثَجَّاجًا﴾ في قوله تعالى: ﴿وَأَنزَلْنَا مِنَ الْمُعْصِرَاتِ مَاءً ثَجَّاجًا﴾؟",
+        subtitleAr: "سورة النبأ",
+        optionsAr: ["منصباً بغزارة وتتابعاً كثيراً", "بارداً عذباً", "صافياً رقراقاً", "قليلاً نادراً"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      }
+    ]
+  },
+
+  // 9. PROPHETS CHALLENGE (Faith Stories)
+  {
+    id: "act-prophets-stories",
+    slug: "prophets-stories",
+    titleAr: "قصص الأنبياء (عبرة وأولوا الألباب)",
+    titleEn: "Stories of the Prophets",
+    taglineAr: "معجزات، مواقف صبر، ودعوات الأنبياء عليهم السلام!",
+    descriptionAr: "مسابقة معرفية تستعرض معجزات الرسل ودعواتهم لقومهم وصبرهم في سبيل تبليغ الرسالة.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 12,
+    maxAge: 99,
+    minPlayers: 3,
+    maxPlayers: 60,
+    duration: 8,
+    energy: "medium",
+    goal: "faith",
+    type: "QUICK_QUIZ",
+    requiresPhone: true,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: true,
+    cooperative: false,
+    isPlayable: true,
+    iconName: "Sun",
+    accentColor: "#0D9488",
+    faithContent: true,
+    tags: ["prophets", "quran", "stories", "faith", "patience"],
+    whyRecommended: "قصص ملهمة في الثبات والصبر والتفاؤل في أحلك الظروف.",
+    instructions: {
+      overviewAr: "تطرح تفاصيل المعجزة أو القصة ويخمن المتسابق اسم النبي الكريم عليه الصلاة والسلام.",
+      hostAr: ["استخرج الحكمة النبوية من كل قصة."],
+      participantAr: ["أجب بناء على ما ورد في القرآن الكريم بدقة."]
+    },
+    rounds: [
+      {
+        id: "prop-1",
+        roundNumber: 1,
+        promptAr: "من هو النبي الكريم الملقب بـ 'خليل الله' والذي بنى الكعبة المشرفة مع ابنه إسماعيل عليهما السلام؟",
+        optionsAr: ["إبراهيم عليه السلام", "موسى عليه السلام", "نوح عليه السلام", "يعقوب عليه السلام"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      },
+      {
+        id: "prop-2",
+        roundNumber: 2,
+        promptAr: "من هو النبي الذي سخر الله له الريح وألان له الحديد وعلمه منطق الطير والجن؟",
+        optionsAr: ["سليمان عليه السلام", "داود عليه السلام", "يوسف عليه السلام", "يونس عليه السلام"],
+        correctAnswer: 0,
+        timeLimit: 15,
+      }
+    ]
+  },
+
+  // 10. GOOD DEEDS & COMMUNITY IMPACT (Action-Oriented Islamic Values)
+  {
+    id: "act-good-deeds",
+    slug: "good-deeds",
+    titleAr: "بصمة خير (العمل الصالح)",
+    titleEn: "Good Deeds & Community Impact",
+    taglineAr: "أفكار عملية لمبادرات تطوعية وإحسان يترك أثراً في المجتمع!",
+    descriptionAr: "ورشة تفاعلية سريعة تبتكر فيها المجموعات مبادرات خيرية فورية (إطعام، سقيا، جبر خواطر، تفريج كرب، تعليم) قابلة للتنفيذ في محيطهم هذا الأسبوع.",
+    category: "ISLAMIC" as any,
+    audience: "adults",
+    minAge: 14,
+    maxAge: 99,
+    minPlayers: 6,
+    maxPlayers: 50,
+    duration: 15,
+    energy: "high",
+    goal: "faith",
+    type: "TEAM_CHALLENGE",
+    requiresPhone: false,
+    requiresScreen: true,
+    requiresMovement: false,
+    requiresMaterials: false,
+    competitive: false,
+    cooperative: true,
+    isPlayable: false,
+    iconName: "Sparkles",
+    accentColor: "#16A34A",
+    faithContent: true,
+    tags: ["volunteering", "charity", "good_deeds", "community", "faith"],
+    whyRecommended: "يحول المشاعر الإيمانية إلى أفعال خيرية واقعية تسعد الناس وتنفع البلاد والعباد.",
+    instructions: {
+      overviewAr: "كل طاولة تبتكر مبادرة خيرية سهلة التنفيذ بلا ميزانية ضخمة وتعرضها في 60 ثانية.",
+      hostAr: ["شجع الأفكار المبتكرة التي يمكن تطبيقها غداً صباحاً."],
+      participantAr: ["فكر في حاجة حقيقية تراها في حيك أو مدرستك أو عملك."]
+    }
+  }
+];
