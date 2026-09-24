@@ -43,20 +43,24 @@ class RoomManager {
     const current = this.rooms.get(code);
 
     if (current) {
-      const statusChanged = incoming.status !== current.status;
-      const roundChanged = incoming.currentRoundIndex !== current.currentRoundIndex;
-      const playersCountChanged = (incoming.players?.length || 0) !== (current.players?.length || 0);
-      const answersCountChanged = (incoming.answers?.length || 0) !== (current.answers?.length || 0);
-
-      // Only ignore if strictly older version and no structural game state changed
+      // 1. Strict Monotonic Version Guarantee: NEVER allow an older state to overwrite a newer state!
       if (
-        !statusChanged &&
-        !roundChanged &&
-        !playersCountChanged &&
-        !answersCountChanged &&
         current.version !== undefined &&
         incoming.version !== undefined &&
         incoming.version < current.version
+      ) {
+        return;
+      }
+
+      // 2. Redundancy Guard: If identical version and no actual state changes, skip re-renders
+      if (
+        current.version !== undefined &&
+        incoming.version !== undefined &&
+        incoming.version === current.version &&
+        incoming.status === current.status &&
+        incoming.currentRoundIndex === current.currentRoundIndex &&
+        (incoming.players?.length || 0) === (current.players?.length || 0) &&
+        (incoming.answers?.length || 0) === (current.answers?.length || 0)
       ) {
         return;
       }
@@ -271,7 +275,7 @@ class RoomManager {
             }
           }
         } catch {}
-      }, 350);
+      }, 500);
 
       this.pollIntervals.set(code, interval);
     }

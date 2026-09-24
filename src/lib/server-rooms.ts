@@ -1,9 +1,10 @@
 import { RoomState, Player, PlayerAnswer } from "@/types";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 // Server-side persistent room storage
-// Shared across all serverless API requests on Vercel
+// Shared across serverless API requests on Vercel & local environments
 declare global {
   var __SPARK_ROOMS_STORE: Map<string, RoomState> | undefined;
 }
@@ -43,8 +44,8 @@ export function broadcastServerRoom(room: RoomState): void {
   }
 }
 
-// Temporary filesystem backup directory for serverless cold-start resilience
-const TMP_DIR = path.join(process.cwd(), ".next", "cache", "spark_rooms");
+// Portable writable filesystem backup directory: /tmp on Linux/Vercel, AppData/Temp on Windows
+const TMP_DIR = path.join(os.tmpdir(), "spark_rooms");
 
 function ensureTmpDir() {
   try {

@@ -43,7 +43,8 @@ export default function HostRoomPage() {
       setJoinUrl(url);
     });
 
-    const initial = roomManager.getOrCreateRoom(roomCode);
+    const urlAct = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("act") : null;
+    const initial = roomManager.getOrCreateRoom(roomCode, urlAct || "this-or-that");
     setRoom(initial);
     const act = getActivityBySlug(initial.activitySlug) || ACTIVITIES[0];
     setActivity(act);

@@ -47,19 +47,16 @@ export async function POST(
 
     const currentRoom = getServerRoom(code);
     if (currentRoom) {
-      const statusChanged = body.status !== currentRoom.status;
-      const roundChanged = body.currentRoundIndex !== currentRoom.currentRoundIndex;
-
-      // Only reject out-of-order requests if neither status nor round changed
+      // Reject stale out-of-order requests strictly: never downgrade server version!
       if (
-        !statusChanged &&
-        !roundChanged &&
         body.version !== undefined &&
         currentRoom.version !== undefined &&
         body.version < currentRoom.version
       ) {
         return NextResponse.json({ success: true, room: currentRoom }, { headers: antiCacheHeaders });
       }
+
+      const roundChanged = body.currentRoundIndex !== currentRoom.currentRoundIndex;
 
       // Merge players to preserve all joined participants
       const playerMap = new Map();

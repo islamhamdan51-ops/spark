@@ -42,14 +42,20 @@ function PlayRoomContent() {
 
     if (p) {
       setCurrentPlayer(p);
-    } else if (urlPlayerId) {
-      setCurrentPlayer({
-        id: urlPlayerId,
-        nickname: "مشارك",
+    } else {
+      const fallbackPlayer: Player = {
+        id: urlPlayerId || `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        nickname: "مشارك ⚡",
         avatar: "⚡",
         joinedAt: Date.now(),
         score: 0,
-      });
+      };
+      setCurrentPlayer(fallbackPlayer);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem(`spark_player_${roomCode}`, JSON.stringify(fallbackPlayer));
+        } catch {}
+      }
     }
 
     // Load existing room locally without creating a dummy one
