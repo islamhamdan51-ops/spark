@@ -114,3 +114,16 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   outline: 2px solid #FF5722;
   outline-offset: 2px;
 }
+
+/* Hide Vercel Preview Toolbar from UI */
+vercel-live-feedback,
+#vercel-live-feedback,
+[data-vercel-toolbar],
+.vercel-toolbar,
+div[class*="vercel-toolbar"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
