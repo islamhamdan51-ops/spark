@@ -1,5 +1,4 @@
-// Arabic Language Questions & Word Games for SPARK V2.0
-// Converted into engaging interactive challenges: Vocabulary, Opposites, Plurals, Proverbs, Idioms.
+import { randomizeRoundOptions } from "@/lib/utils";
 
 export interface ArabicQuestion {
   id: string;
@@ -12,7 +11,7 @@ export interface ArabicQuestion {
   timeLimit: number;
 }
 
-export const ARABIC_LANGUAGE_BANK: ArabicQuestion[] = [
+const RAW_ARABIC_LANGUAGE_BANK: ArabicQuestion[] = [
   {
     id: "arab-1",
     type: "vocabulary",
@@ -169,3 +168,5 @@ export const ARABIC_LANGUAGE_BANK: ArabicQuestion[] = [
     timeLimit: 15,
   }
 ];
+
+export const ARABIC_LANGUAGE_BANK: ArabicQuestion[] = RAW_ARABIC_LANGUAGE_BANK.map(randomizeRoundOptions);

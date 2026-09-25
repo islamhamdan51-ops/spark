@@ -1,4 +1,5 @@
 import { Activity } from "@/types";
+import { randomizeRoundOptions } from "@/lib/utils";
 import { ADULT_ACTIVITIES } from "./activities/adult-activities";
 import { ISLAMIC_ACTIVITIES } from "./activities/islamic-activities";
 import { ARABIC_ACTIVITIES } from "./activities/arabic-activities";
@@ -2652,11 +2653,16 @@ const ALL_RAW_ACTIVITIES: Activity[] = [
 ];
 
 const seenSlugs = new Set<string>();
-export const ACTIVITIES: Activity[] = ALL_RAW_ACTIVITIES.filter((act) => {
-  if (seenSlugs.has(act.slug)) return false;
-  seenSlugs.add(act.slug);
-  return true;
-});
+export const ACTIVITIES: Activity[] = ALL_RAW_ACTIVITIES
+  .map((act) => ({
+    ...act,
+    rounds: act.rounds ? act.rounds.map(randomizeRoundOptions) : undefined,
+  }))
+  .filter((act) => {
+    if (seenSlugs.has(act.slug)) return false;
+    seenSlugs.add(act.slug);
+    return true;
+  });
 
 // Helper functions to query activities
 export function getAllActivities(): Activity[] {

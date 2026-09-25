@@ -1,5 +1,4 @@
-// 30+ Wit and Quick Knowledge Questions for "تحدي النباهة السريع" (Quick Quiz Spark)
-// Fast-paced, engaging, verified answers, points-awarding.
+import { randomizeRoundOptions } from "@/lib/utils";
 
 export interface QuizQuestion {
   id: string;
@@ -13,7 +12,7 @@ export interface QuizQuestion {
   timeLimit: number;
 }
 
-export const QUICK_QUIZ_BANK: QuizQuestion[] = [
+const RAW_QUICK_QUIZ_BANK: QuizQuestion[] = [
   {
     id: "quiz-1",
     category: "science",
@@ -180,3 +179,5 @@ export const QUICK_QUIZ_BANK: QuizQuestion[] = [
     timeLimit: 15,
   }
 ];
+
+export const QUICK_QUIZ_BANK: QuizQuestion[] = RAW_QUICK_QUIZ_BANK.map(randomizeRoundOptions);

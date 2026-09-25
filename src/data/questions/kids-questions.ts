@@ -1,5 +1,4 @@
-// Kids Questions & Challenges Bank for SPARK V2.0
-// Graded for Ages: 4-6 (Visual & Action), 7-9 (Fun & Discovery), 10-12 (Wit & Knowledge)
+import { randomizeRoundOptions } from "@/lib/utils";
 
 export interface KidsQuestion {
   id: string;
@@ -15,7 +14,7 @@ export interface KidsQuestion {
   timeLimit: number;
 }
 
-export const KIDS_QUESTION_BANK: KidsQuestion[] = [
+const RAW_KIDS_QUESTION_BANK: KidsQuestion[] = [
   // Age 4-6: Visual, Animals, Movement, Good Manners
   {
     id: "kid-1",
@@ -190,3 +189,5 @@ export const KIDS_QUESTION_BANK: KidsQuestion[] = [
     timeLimit: 20,
   }
 ];
+
+export const KIDS_QUESTION_BANK: KidsQuestion[] = RAW_KIDS_QUESTION_BANK.map(randomizeRoundOptions);

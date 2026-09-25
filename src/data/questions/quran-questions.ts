@@ -1,5 +1,4 @@
-// Verified Quranic Questions Bank for SPARK V2.0
-// Strict rule: Exact Quran text verified with Surah and Ayah reference.
+import { randomizeRoundOptions } from "@/lib/utils";
 
 export interface QuranQuestion {
   id: string;
@@ -15,7 +14,7 @@ export interface QuranQuestion {
   timeLimit: number;
 }
 
-export const QURAN_QUESTION_BANK: QuranQuestion[] = [
+const RAW_QURAN_QUESTION_BANK: QuranQuestion[] = [
   {
     id: "quran-1",
     type: "complete_ayah",
@@ -222,3 +221,5 @@ export const QURAN_QUESTION_BANK: QuranQuestion[] = [
     timeLimit: 20,
   }
 ];
+
+export const QURAN_QUESTION_BANK: QuranQuestion[] = RAW_QURAN_QUESTION_BANK.map(randomizeRoundOptions);
