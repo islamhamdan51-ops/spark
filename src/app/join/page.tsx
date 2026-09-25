@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Sparkles, AlertCircle, ArrowRight, UserCheck } from "lucide-react";
+import { Sparkles, AlertCircle, ArrowRight } from "lucide-react";
 import { roomManager } from "@/lib/room-store";
 import { AVATAR_OPTIONS, getRandomAvatar } from "@/lib/utils";
 import { sounds } from "@/lib/sound";
@@ -65,17 +65,17 @@ function JoinContent() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white rounded-3xl p-7 sm:p-9 border border-slate-200/90 shadow-xl relative z-10 animate-scale-in">
+    <div className="w-full max-w-md bg-white rounded-3xl p-7 sm:p-9 border border-[#E2EEF8] shadow-sm relative z-10 animate-scale-in text-right">
       {/* Brand Header */}
       <div className="text-center mb-6">
         <Link href="/" className="inline-flex items-center gap-2 group mb-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-spark-flame to-spark-amber flex items-center justify-center shadow-md shadow-spark-flame/20">
-            <span className="text-xl">⚡</span>
+          <div className="w-10 h-10 rounded-2xl bg-[#EAF7FF] border border-[#BAE6FD] flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-[#2F8FD8]" />
           </div>
-          <span className="text-2xl font-black text-slate-900 font-arabic">شرارة</span>
+          <span className="text-2xl font-black text-[#17324D] font-arabic">شرارة</span>
         </Link>
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 font-arabic">الانضمام إلى غرفة نشاط</h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">ادخل الرمز واسمك المستعار للمشاركة فوراً</p>
+        <h1 className="text-xl sm:text-2xl font-black text-[#17324D] font-arabic">الانضمام للغرفة</h1>
+        <p className="text-xs sm:text-sm text-[#60788C] mt-1 font-medium">ادخل رمز الغرفة واسمك المستعار للمشاركة فوراً</p>
       </div>
 
       {errorMsg && (
@@ -87,7 +87,7 @@ function JoinContent() {
 
       <form onSubmit={handleJoin} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1.5 text-right">
+          <label className="block text-xs font-bold text-[#17324D] mb-1.5 text-right">
             رمز الغرفة (6 أرقام):
           </label>
           <input
@@ -96,15 +96,15 @@ function JoinContent() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="مثال: 742391"
-            className="w-full text-center tracking-widest text-2xl font-mono font-black py-3 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-spark-flame placeholder-slate-400 focus:outline-none focus:border-spark-flame focus:bg-white focus:ring-4 focus:ring-spark-flame/10 transition-all"
+            className="w-full text-center tracking-widest text-2xl font-mono font-black py-3 px-4 bg-[#F4F9FD] border border-[#E2EEF8] rounded-2xl text-[#2F8FD8] placeholder-[#60788C]/40 focus:outline-none focus:border-[#2F8FD8] focus:bg-white focus:ring-4 focus:ring-[#2F8FD8]/10 transition-all"
             required
             autoFocus={!initialCode}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1.5 text-right">
-            اسمك المستعار في النشاط:
+          <label className="block text-xs font-bold text-[#17324D] mb-1.5 text-right">
+            اسمك المستعار:
           </label>
           <input
             type="text"
@@ -112,20 +112,20 @@ function JoinContent() {
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             placeholder="نور، ليث، سارة، الصقر..."
-            className="w-full text-right text-sm font-bold py-3 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-spark-flame focus:bg-white focus:ring-4 focus:ring-spark-flame/10 transition-all"
+            className="w-full text-right text-sm font-bold py-3 px-4 bg-[#F4F9FD] border border-[#E2EEF8] rounded-2xl text-[#17324D] placeholder-[#60788C]/40 focus:outline-none focus:border-[#2F8FD8] focus:bg-white focus:ring-4 focus:ring-[#2F8FD8]/10 transition-all"
             required
             autoFocus={Boolean(initialCode)}
           />
-          <span className="text-[11px] text-slate-400 mt-1 block text-right font-medium">
+          <span className="text-[11px] text-[#60788C] mt-1 block text-right">
             لا يشترط اسمك الحقيقي، اختر أي لقب يعبر عنك!
           </span>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-2 text-right">
-            اختر أيقونتك المميزة:
+          <label className="block text-xs font-bold text-[#17324D] mb-2 text-right">
+            اختر أيقونتك:
           </label>
-          <div className="grid grid-cols-8 gap-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200/80">
+          <div className="grid grid-cols-8 gap-1.5 p-2 bg-[#F4F9FD] rounded-2xl border border-[#E2EEF8]">
             {AVATAR_OPTIONS.map((av) => (
               <button
                 key={av}
@@ -136,8 +136,8 @@ function JoinContent() {
                 }}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all ${
                   selectedAvatar === av
-                    ? "bg-white border-2 border-spark-flame scale-110 shadow-md shadow-spark-flame/20"
-                    : "hover:bg-slate-200/60 text-slate-400"
+                    ? "bg-white border-2 border-[#2F8FD8] scale-105 shadow-xs"
+                    : "hover:bg-[#EAF7FF] text-slate-400"
                 }`}
               >
                 {av}
@@ -150,16 +150,15 @@ function JoinContent() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full spark-glow-button py-3.5 rounded-2xl text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-spark-flame/25 disabled:opacity-60"
+            className="w-full py-3.5 rounded-2xl bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60"
           >
-            <Sparkles className="w-4 h-4" />
             <span>{isSubmitting ? "جاري الدخول..." : "دخول الغرفة"}</span>
           </button>
         </div>
       </form>
 
-      <div className="text-center mt-6 pt-4 border-t border-slate-100">
-        <Link href="/" className="text-xs font-bold text-slate-500 hover:text-spark-flame transition-colors inline-flex items-center gap-1">
+      <div className="text-center mt-6 pt-4 border-t border-[#E2EEF8]">
+        <Link href="/" className="text-xs font-bold text-[#60788C] hover:text-[#2F8FD8] transition-colors inline-flex items-center gap-1">
           <span>العودة للصفحة الرئيسية</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -170,10 +169,8 @@ function JoinContent() {
 
 export default function JoinPage() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 flex flex-col justify-center items-center p-4 font-arabic relative overflow-hidden">
-      {/* Subtle warm backdrop glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-tr from-spark-flame/8 to-spark-amber/8 blur-3xl pointer-events-none rounded-full" />
-      <Suspense fallback={<div className="text-sm font-bold text-slate-500">جاري التحميل...</div>}>
+    <div className="min-h-screen bg-[#F4F9FD] text-[#17324D] flex flex-col justify-center items-center p-4 font-arabic relative overflow-hidden">
+      <Suspense fallback={<div className="text-sm font-bold text-[#60788C]">جاري التحميل...</div>}>
         <JoinContent />
       </Suspense>
     </div>

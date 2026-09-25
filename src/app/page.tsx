@@ -5,7 +5,7 @@ import Link from "next/link";
 import { 
   Sparkles, Play, Dices, ArrowLeft, Users, Clock, Flame, 
   Smile, Trophy, MessageSquare, Zap, Palette, Award, ShieldCheck, Heart,
-  Smartphone, Monitor, BookOpen, Compass
+  Smartphone, Monitor, BookOpen, Compass, CheckCircle2
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { ActivityWizardModal } from "@/components/wizard/ActivityWizardModal";
@@ -18,21 +18,20 @@ export default function HomePage() {
   const [randomModalOpen, setRandomModalOpen] = useState(false);
   const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
 
-  // The 10 golden intents specified in Master V2.0 prompt
+  // The 10 golden intents
   const INTENTS = [
-    { id: "icebreaker", label: "تعارف", icon: "🤝", desc: "اكسر الحواجز الأولى واجعل الجميع يتعارفون بسلاسة" },
-    { id: "laughter", label: "ضحك", icon: "😂", desc: "أشعل الابتسامات ومواقف فكاهية غير متوقعة" },
-    { id: "energizer", label: "رفع الطاقة", icon: "🔥", desc: "تنشيط سريع وضخ الحيوية في القاعة" },
-    { id: "thinking", label: "تفكير", icon: "🧠", desc: "ألغاز وأسئلة ذكاء وسرعة بديهة جماعية" },
-    { id: "competition", label: "منافسة", icon: "🏆", desc: "تحدي نقاط حماسي بين الفرق والمشاركين" },
-    { id: "creativity", label: "إبداع", icon: "🎨", desc: "تفكير خارج الصندوق وحلول مبتكرة وممتعة" },
-    { id: "discussion", label: "نقاش", icon: "💬", desc: "حوارات ثرية وأسئلة تفتح آفاق الحديث" },
-    { id: "movement", label: "حركة", icon: "🏃", desc: "نشاط حركي وتفاعل بالقاعة بدون هواتف" },
-    { id: "knowledge", label: "معرفة", icon: "📖", desc: "معلومات عامة، تاريخ، لغة عربية، وثقافة" },
-    { id: "faith", label: "إيمان وقيم", icon: "🌙", desc: "آيات قرآنية موثوقة، سيرة نبوية، وقيم أخلاقية" },
+    { id: "icebreaker", label: "تعارف", icon: "🤝" },
+    { id: "laughter", label: "ضحك", icon: "😂" },
+    { id: "energizer", label: "طاقة", icon: "⚡" },
+    { id: "thinking", label: "تفكير", icon: "🧠" },
+    { id: "competition", label: "منافسة", icon: "🏆" },
+    { id: "creativity", label: "إبداع", icon: "🎨" },
+    { id: "discussion", label: "نقاش", icon: "💬" },
+    { id: "movement", label: "حركة", icon: "🏃" },
+    { id: "knowledge", label: "معرفة", icon: "📖" },
+    { id: "faith", label: "إيمان وقيم", icon: "🌙" },
   ];
 
-  // Activities filtered by intent or default flagships
   const displayedActivities = selectedIntent
     ? ACTIVITIES.filter((a) => {
         if (selectedIntent === "faith") return a.faithContent || a.category === "ISLAMIC" || a.goal === "faith";
@@ -44,203 +43,157 @@ export default function HomePage() {
     : ACTIVITIES.filter((a) => a.isPlayable).slice(0, 6);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#F8F9FA] text-slate-900 font-arabic">
+    <div className="flex-1 flex flex-col bg-[#F4F9FD] text-[#17324D] font-arabic selection:bg-[#C9ECFF]">
       <Navbar
         onOpenWizard={() => setWizardOpen(true)}
         onOpenRandomSpark={() => setRandomModalOpen(true)}
       />
 
       <main className="flex-1">
-        {/* HERO SECTION */}
-        <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-slate-200/80 bg-white">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+        {/* 01 — HERO SECTION */}
+        <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 bg-white border-b border-[#E2EEF8]">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             
-            {/* Memorable Micro Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-orange-200 bg-orange-50 text-spark-flame text-xs font-bold mb-6 shadow-2xs">
-              <span>⚡</span>
-              <span>عندك مجموعة؟ عندك شرارة</span>
+            {/* Small Brand Label */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] text-xs font-bold mb-6">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>SPARK / شرارة</span>
             </div>
 
-            {/* Core Question Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 font-arabic leading-[1.15] tracking-tight max-w-4xl mx-auto">
-              ما تعرفش شنو تدير مع <span className="text-spark-flame">المجموعة؟</span>
+            {/* Main Headline */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#17324D] leading-[1.2] tracking-tight">
+              ما تعرفش شنو تدير مع المجموعة؟
             </h1>
 
-            {/* Clear Subheading */}
-            <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto mt-5 leading-relaxed">
+            {/* Supporting Line */}
+            <p className="text-base sm:text-lg text-[#60788C] max-w-xl mx-auto mt-4 leading-relaxed font-medium">
               شرارة تختار لك النشاط المناسب وتبدأه مع المجموعة خلال دقائق.
             </p>
 
-            {/* Hero CTAs */}
+            {/* Primary & Secondary CTAs */}
             <div className="flex flex-wrap items-center justify-center gap-3.5 pt-8">
               <button
                 onClick={() => setWizardOpen(true)}
-                className="bg-spark-flame hover:bg-spark-flame/90 active:scale-98 transition-all px-8 py-4 rounded-2xl text-white font-bold text-base flex items-center gap-2.5 shadow-md shadow-orange-500/25"
+                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-8 py-3.5 rounded-xl text-white font-bold text-base shadow-xs"
               >
-                <Sparkles className="w-5 h-5" />
-                <span>ابدأ الآن</span>
+                ابدأ الآن
               </button>
 
               <Link
                 href="/demo"
-                className="px-7 py-4 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-base flex items-center gap-2.5 transition-all shadow-xs"
+                className="px-7 py-3.5 rounded-xl border border-[#2F8FD8] bg-white hover:bg-[#F0F8FF] text-[#2F8FD8] font-bold text-base transition-all"
               >
-                <Play className="w-4 h-4 fill-slate-800" />
-                <span>جرّب Demo حي</span>
+                جرّب Demo
               </Link>
-
-              <button
-                onClick={() => setRandomModalOpen(true)}
-                className="px-6 py-4 rounded-2xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-spark-flame font-bold text-base flex items-center gap-2 transition-all shadow-xs"
-              >
-                <Dices className="w-5 h-5" />
-                <span>🎲 أنقذني</span>
-              </button>
             </div>
 
-            {/* Trust Points */}
-            <div className="pt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-bold">
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span>
-                <span>بدون تسجيل حساب للمشاركين</span>
+            {/* Clean Simulated Activity Card Preview */}
+            <div className="mt-14 max-w-md mx-auto bg-white rounded-2xl border border-[#E2EEF8] p-6 shadow-xs text-right space-y-4">
+              <div className="flex items-center justify-between text-xs font-bold text-[#60788C] pb-3 border-b border-[#E2EEF8]">
+                <span>نشاط تجريبي: لو خيّروك</span>
+                <span className="text-[#2F8FD8] font-mono bg-[#EAF7FF] px-2 py-0.5 rounded-md">30 ثانية</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span>
-                <span>أنشطة بالهواتف وأنشطة بدون أجهزة</span>
+              <h3 className="text-lg font-bold text-[#17324D]">
+                شن تختار لو أتيحت لك فرصة واحدة؟
+              </h3>
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="p-3.5 rounded-xl bg-[#F4F9FD] border border-[#C9ECFF] text-center font-bold text-sm text-[#2F8FD8] cursor-pointer hover:bg-[#EAF7FF] transition-colors">
+                  المغامرة والسفر 🌍
+                </div>
+                <div className="p-3.5 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8] text-center font-bold text-sm text-[#17324D] cursor-pointer hover:bg-[#EAF7FF] transition-colors">
+                  الراحة والهدوء ☕
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span>
-                <span>قسم آمن مخصص للأطفال</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-emerald-600">✓</span>
-                <span>محتوى إسلامي ولغوي موثق</span>
+              <div className="text-center pt-1">
+                <span className="text-[11px] text-[#60788C]">
+                  بدون تثبيت تطبيقات • يعمل عبر أي متصفح بالهاتف أو الشاشة
+                </span>
               </div>
             </div>
 
           </div>
         </section>
 
-        {/* INTENT DISCOVERY: "شن تحتاج من المجموعة؟" */}
-        <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-arabic">
+        {/* 02 — INTENT SECTION: "شن تحتاج من المجموعة؟" */}
+        <section className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
               شن تحتاج من المجموعة؟
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              اضغط على هدف جلستك الآن وسنظهر لك الأنشطة المصممة خصيصاً له:
+            <p className="text-sm text-[#60788C] mt-1 font-medium">
+              اختر الهدف، وستظهر لك الأنشطة المصممة له بدقة:
             </p>
           </div>
 
-          {/* 10 Intent Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          {/* Clean 10 Intent Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {INTENTS.map((intent) => {
               const isActive = selectedIntent === intent.id;
               return (
                 <button
                   key={intent.id}
                   onClick={() => setSelectedIntent(isActive ? null : intent.id)}
-                  className={`p-4 rounded-2xl text-center transition-all flex flex-col items-center justify-center gap-2 border ${
+                  className={`p-4 rounded-xl text-center transition-all flex flex-col items-center justify-center gap-2 border ${
                     isActive
-                      ? "bg-spark-flame text-white border-spark-flame shadow-md scale-102"
-                      : "bg-white border-slate-200 text-slate-800 hover:border-orange-300 hover:bg-orange-50/40 shadow-xs"
+                      ? "bg-[#2F8FD8] text-white border-[#2F8FD8] shadow-xs"
+                      : "bg-white border-[#E2EEF8] text-[#17324D] hover:border-[#A9DFFF] hover:bg-[#F4F9FD]"
                   }`}
                 >
                   <span className="text-2xl">{intent.icon}</span>
-                  <span className="text-sm font-bold font-arabic">{intent.label}</span>
+                  <span className="text-sm font-bold">{intent.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Activity Cards for Selected Intent or Flagships */}
+          {/* Displayed Activities */}
           <div className="mt-12">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-slate-900 font-arabic flex items-center gap-2">
-                <span>{selectedIntent ? "الأنشطة المقترحة لهذا الهدف:" : "أبرز الأنشطة الجاهزة للانطلاق فوراً:"}</span>
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-mono font-bold">
-                  {displayedActivities.length}
-                </span>
+              <h3 className="text-lg font-bold text-[#17324D]">
+                {selectedIntent ? "الأنشطة الموصى بها:" : "الأنشطة الشائعة:"}
               </h3>
 
               <Link
                 href="/activities"
-                className="text-xs font-bold text-spark-flame hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#2F8FD8] hover:underline flex items-center gap-1"
               >
-                <span>عرض المكتبة الكاملة ({ACTIVITIES.length})</span>
+                <span>المكتبة الكاملة ({ACTIVITIES.length})</span>
                 <ArrowLeft className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {displayedActivities.map((act) => (
                 <div
                   key={act.id}
-                  className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-orange-300 hover:shadow-md transition-all flex flex-col justify-between"
+                  className="bg-white rounded-2xl p-5 border border-[#E2EEF8] shadow-xs hover:border-[#A9DFFF] transition-all flex flex-col justify-between"
                 >
                   <div>
-                    {/* Header Chips */}
-                    <div className="flex items-center justify-between mb-3 text-xs">
-                      <span className="px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-spark-flame font-bold">
-                        ⏱️ {act.duration} دقائق
+                    <div className="flex items-center justify-between text-xs text-[#60788C] mb-2 font-medium">
+                      <span className="bg-[#EAF7FF] text-[#2F8FD8] px-2 py-0.5 rounded-md font-bold">
+                        {act.duration} دقائق
                       </span>
-                      <span className="text-slate-500 font-bold">
-                        👥 {act.minPlayers}–{act.maxPlayers}
-                      </span>
+                      <span>👥 {act.minPlayers}–{act.maxPlayers}</span>
                     </div>
 
-                    <h4 className="text-xl font-black text-slate-900 font-arabic mb-2">
+                    <h4 className="text-base font-bold text-[#17324D] mb-1.5">
                       {act.titleAr}
                     </h4>
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-[#60788C] line-clamp-2 leading-relaxed">
                       {act.descriptionAr}
                     </p>
-
-                    {/* Metadata Chips */}
-                    <div className="flex flex-wrap gap-1.5 mt-4 pt-3 border-t border-slate-100 text-[11px] font-bold text-slate-600">
-                      {act.requiresPhone ? (
-                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 flex items-center gap-1">
-                          <Smartphone className="w-3 h-3 text-spark-flame" />
-                          <span>📱 هاتف</span>
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-1">
-                          <span>✅ لا يحتاج أجهزة</span>
-                        </span>
-                      )}
-
-                      {act.requiresScreen && (
-                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200">
-                          📺 شاشة
-                        </span>
-                      )}
-
-                      {act.faithContent && (
-                        <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800">
-                          🌙 محتوى إسلامي
-                        </span>
-                      )}
-
-                      {act.languageContent && (
-                        <span className="px-2 py-0.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
-                          🗣️ لغة عربية
-                        </span>
-                      )}
-                    </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="pt-5 mt-4 border-t border-slate-100 flex items-center gap-2">
+                  <div className="pt-4 mt-4 border-t border-[#E2EEF8] flex items-center gap-2">
                     <Link
                       href={`/host/${Math.floor(100000 + Math.random() * 900000)}?act=${act.slug}`}
-                      className="flex-1 bg-spark-flame hover:bg-spark-flame/90 text-white font-bold text-xs py-2.5 rounded-xl text-center transition-colors shadow-2xs"
+                      className="flex-1 bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-xs py-2 rounded-lg text-center transition-colors shadow-2xs"
                     >
-                      ابدأ النشاط الآن
+                      ابدأ النشاط
                     </Link>
-
                     <Link
                       href={`/activity/${act.slug}`}
-                      className="px-3.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors"
+                      className="px-3 py-2 rounded-lg border border-[#E2EEF8] hover:bg-[#F4F9FD] text-[#60788C] text-xs font-medium transition-colors"
                     >
                       معاينة
                     </Link>
@@ -251,28 +204,133 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FACILITATION CALLOUT: FOR WORKSHOPS & ORGANIZATIONS */}
-        <section className="py-12 bg-white border-t border-slate-200">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 font-arabic">
-              منصة التيسير والتفاعل الجماعي للمدربين والمنظمات
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              سواء كنت تقود ورشة عمل، نشاطاً تطوعياً، حلقة تعليمية، أو تدريباً تفاعلياً؛ شرارة تمنحك أدوات جاهزة ومحتوى غنياً يضمن مشاركة الجميع بدون تحضير معقد.
-            </p>
-            <div className="pt-2 flex flex-wrap justify-center gap-3">
-              <Link
-                href="/activities"
-                className="px-6 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors"
-              >
-                تصفح كل الأنشطة ({ACTIVITIES.length})
-              </Link>
-              <Link
-                href="/kids"
-                className="px-6 py-2.5 rounded-xl bg-orange-50 border border-orange-200 text-spark-flame text-xs font-bold transition-colors"
-              >
+        {/* 03 — RESCUE EXPERIENCE: "أنقذني" */}
+        <section className="py-8 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl border border-[#C9ECFF] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+            <div className="space-y-1 text-center sm:text-right">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <span className="text-xl">🎲</span>
+                <h3 className="text-lg font-bold text-[#17324D]">محتار وما عندكش وقت للتفكير؟</h3>
+              </div>
+              <p className="text-xs sm:text-sm text-[#60788C]">
+                اضغط على زر &quot;أنقذني&quot; وسنختار لك نشاطاً فورياً يناسب مجموعتك وطاقتكم الآن.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setRandomModalOpen(true)}
+              className="px-6 py-3 rounded-xl bg-[#EAF7FF] hover:bg-[#DDF2FF] border border-[#A9DFFF] text-[#2F8FD8] text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap shadow-2xs"
+            >
+              <Dices className="w-4 h-4 text-[#2F8FD8]" />
+              <span>🎲 أنقذني</span>
+            </button>
+          </div>
+        </section>
+
+        {/* 04 — CATEGORIES: ADULTS & KIDS & FAITH */}
+        <section className="py-12 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            {/* Adults */}
+            <Link
+              href="/activities?audience=adults"
+              className="bg-white rounded-2xl p-6 border border-[#E2EEF8] hover:border-[#A9DFFF] transition-all group shadow-xs"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center text-lg mb-3">
+                👥
+              </div>
+              <h4 className="text-base font-bold text-[#17324D] group-hover:text-[#2F8FD8] transition-colors">
+                الكبار والشباب
+              </h4>
+              <p className="text-xs text-[#60788C] mt-1 leading-relaxed">
+                أنشطة كسر جمود، حوارات، تحديات سرعة وتفكير عميق للقاءات وورش العمل.
+              </p>
+            </Link>
+
+            {/* Kids */}
+            <Link
+              href="/kids"
+              className="bg-white rounded-2xl p-6 border border-[#E2EEF8] hover:border-[#A9DFFF] transition-all group shadow-xs"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center text-lg mb-3">
+                🎈
+              </div>
+              <h4 className="text-base font-bold text-[#17324D] group-hover:text-[#2F8FD8] transition-colors">
                 قسم الأطفال الآمن
-              </Link>
+              </h4>
+              <p className="text-xs text-[#60788C] mt-1 leading-relaxed">
+                أنشطة حركية وقيمية مسلية مصممة خصيصاً للصغار، بدون إعلانات أو مشتتات.
+              </p>
+            </Link>
+
+            {/* Faith & Values */}
+            <Link
+              href="/activities?category=ISLAMIC"
+              className="bg-white rounded-2xl p-6 border border-[#E2EEF8] hover:border-[#A9DFFF] transition-all group shadow-xs"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center text-lg mb-3">
+                🌙
+              </div>
+              <h4 className="text-base font-bold text-[#17324D] group-hover:text-[#2F8FD8] transition-colors">
+                إيمان وقيم ولغة عربية
+              </h4>
+              <p className="text-xs text-[#60788C] mt-1 leading-relaxed">
+                آيات موثوقة، سيرة نبوية، ومفردات لغوية تثري الجلسات الأسرية والتربوية.
+              </p>
+            </Link>
+
+          </div>
+        </section>
+
+        {/* 05 — HOW IT WORKS: 3 SIMPLE STEPS */}
+        <section id="how-it-works" className="py-16 bg-white border-t border-[#E2EEF8]">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
+              كيف تعمل شرارة؟
+            </h2>
+            <p className="text-sm text-[#60788C] mt-1 font-medium">
+              3 خطوات بسيطة لبدء أي جلسة تفاعلية:
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 text-center">
+              <div className="p-6 rounded-2xl bg-[#F4F9FD] border border-[#E2EEF8] space-y-2">
+                <div className="w-9 h-9 rounded-full bg-[#2F8FD8] text-white font-bold text-sm flex items-center justify-center mx-auto">
+                  1
+                </div>
+                <h4 className="text-base font-bold text-[#17324D]">اختر النشاط</h4>
+                <p className="text-xs text-[#60788C] leading-relaxed">
+                  تصفح المكتبة أو دع المعالج الذكي يختار ما يلائم عددكم وطاقتكم.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#F4F9FD] border border-[#E2EEF8] space-y-2">
+                <div className="w-9 h-9 rounded-full bg-[#2F8FD8] text-white font-bold text-sm flex items-center justify-center mx-auto">
+                  2
+                </div>
+                <h4 className="text-base font-bold text-[#17324D]">شارك الرمز أو الشاشة</h4>
+                <p className="text-xs text-[#60788C] leading-relaxed">
+                  افتح الغرفة للمجموعة ليدخلوا فوراً عبر مسح الرمز QR بدون حسابات.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-[#F4F9FD] border border-[#E2EEF8] space-y-2">
+                <div className="w-9 h-9 rounded-full bg-[#2F8FD8] text-white font-bold text-sm flex items-center justify-center mx-auto">
+                  3
+                </div>
+                <h4 className="text-base font-bold text-[#17324D]">تفاعلوا وعيشوا اللحظة</h4>
+                <p className="text-xs text-[#60788C] leading-relaxed">
+                  صوتوا، جاوبوا، وتابعوا النتائج الحية على الشاشة الرئيسية مباشرة.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10">
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-xs transition-all"
+              >
+                ابدأ جلستك الآن
+              </button>
             </div>
           </div>
         </section>
@@ -280,15 +338,15 @@ export default function HomePage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-[#F8F9FA] py-8 text-center text-xs text-slate-500 font-medium">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-[#E2EEF8] bg-white py-8 text-center text-xs text-[#60788C]">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800 font-arabic text-sm">SPARK / شرارة</span>
-            <span className="text-slate-400">|</span>
-            <span>منصة الأنشطة والتفاعل الجماعي V2.0</span>
+            <span className="font-bold text-[#17324D]">SPARK / شرارة</span>
+            <span>•</span>
+            <span>منصة الأنشطة والتفاعل الجماعي</span>
           </div>
           <div>
-            جميع الحقوق محفوظة © {new Date().getFullYear()} — صُمم ليجمع الناس بكل طاقة ومعنى.
+            جميع الحقوق محفوظة © {new Date().getFullYear()}
           </div>
         </div>
       </footer>

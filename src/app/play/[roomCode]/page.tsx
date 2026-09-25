@@ -26,6 +26,7 @@ function PlayRoomContent() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [textInput, setTextInput] = useState<string>("");
   const [secondsLeft, setSecondsLeft] = useState<number>(15);
+  const [countdownVal, setCountdownVal] = useState<number>(3);
   const answeredRoundsRef = useRef<Map<number, { option?: number; text?: string }>>(new Map());
 
   useEffect(() => {
@@ -59,7 +60,7 @@ function PlayRoomContent() {
       }
     }
 
-    // Load existing room locally without creating a dummy one
+    // Load existing room locally
     const local = roomManager.getLocalRoom(roomCode);
     if (local) {
       setRoom(local);
@@ -67,7 +68,7 @@ function PlayRoomContent() {
       setActivity(act);
     }
 
-    // Subscribe to updates (will fetch from server if not found in memory)
+    // Subscribe to updates
     const unsubscribe = roomManager.subscribe(roomCode, (updated) => {
       if (!updated) return;
       setRoom({ ...updated });
@@ -79,6 +80,22 @@ function PlayRoomContent() {
 
     return () => unsubscribe();
   }, [roomCode, urlPlayerId]);
+
+  // Synchronized countdown timer (3 -> 2 -> 1)
+  useEffect(() => {
+    if (room?.status === "COUNTDOWN") {
+      const updateCountdown = () => {
+        const elapsed = Math.floor((Date.now() - (room.roundStartTime || Date.now())) / 1000);
+        const remaining = Math.max(1, 3 - elapsed);
+        setCountdownVal(remaining);
+      };
+      updateCountdown();
+      const interval = setInterval(updateCountdown, 250);
+      return () => clearInterval(interval);
+    } else {
+      setCountdownVal(3);
+    }
+  }, [room?.status, room?.roundStartTime]);
 
   const fallbackRound: ActivityRound = {
     id: `${activity?.id || "act"}-round-${(room?.currentRoundIndex || 0) + 1}`,
@@ -180,13 +197,12 @@ function PlayRoomContent() {
 
   if (!room || !activity) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-slate-800 font-arabic">
-        <div className="text-center p-6 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-2xl bg-orange-50 text-spark-flame flex items-center justify-center mx-auto animate-spin text-xl">
+      <div className="min-h-screen bg-[#F4F9FD] flex items-center justify-center text-[#17324D] font-arabic">
+        <div className="text-center p-6 bg-white rounded-2xl border border-[#E2EEF8] shadow-xs space-y-3">
+          <div className="w-8 h-8 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center mx-auto animate-spin text-lg">
             ⚡
           </div>
-          <div className="text-base font-bold">جاري الاتصال بالغرفة {roomCode}...</div>
-          <p className="text-xs text-slate-400">نظام المزامنة الفورية نشط</p>
+          <div className="text-sm font-bold">جاري الاتصال بالغرفة {roomCode}...</div>
         </div>
       </div>
     );
@@ -247,13 +263,13 @@ function PlayRoomContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 flex flex-col font-arabic select-none">
-      {/* Top Participant Status Bar */}
-      <header className="p-4 border-b border-slate-200 bg-white/95 backdrop-blur-md flex items-center justify-between shadow-2xs">
+    <div className="min-h-screen bg-[#F4F9FD] text-[#17324D] flex flex-col font-arabic select-none">
+      {/* 24 — Clean Top Participant Status Bar */}
+      <header className="p-3.5 border-b border-[#E2EEF8] bg-white/95 backdrop-blur-md flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{currentPlayer?.avatar || "⚡"}</span>
+          <span className="text-xl">{currentPlayer?.avatar || "⚡"}</span>
           <div className="text-right">
-            <span className="text-xs font-bold text-slate-900 block">
+            <span className="text-xs font-bold text-[#17324D] block">
               {currentPlayer?.nickname || "مشارك"}
             </span>
             <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
@@ -264,120 +280,108 @@ function PlayRoomContent() {
         </div>
 
         <div className="text-right">
-          <span className="text-[10px] text-slate-400 block font-mono">الغرفة</span>
-          <span className="text-xs font-bold font-mono text-spark-flame tracking-wider bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
+          <span className="text-xs font-bold font-mono text-[#2F8FD8] tracking-wider bg-[#EAF7FF] px-2.5 py-1 rounded-md border border-[#C9ECFF]">
             {roomCode}
           </span>
         </div>
       </header>
 
-      {/* Main Playing Viewport */}
-      <main className="flex-1 flex flex-col justify-center p-4 sm:p-6 max-w-lg mx-auto w-full">
+      {/* Main Playing Viewport: Focused, Minimal, Clear */}
+      <main className="flex-1 flex flex-col justify-center p-4 sm:p-6 max-w-md mx-auto w-full">
         
         {/* 1. LOBBY WAITING STATE */}
         {room.status === "LOBBY" && (
-          <div className="text-center space-y-5 animate-scale-in py-8 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-            <div className="w-16 h-16 rounded-3xl bg-orange-50 border border-orange-200 text-spark-flame flex items-center justify-center mx-auto text-3xl shadow-xs animate-pulse-slow">
-              {currentPlayer?.avatar || "⚡"}
+          <div className="text-center space-y-4 animate-scale-in py-10 bg-white rounded-2xl p-6 border border-[#E2EEF8] shadow-xs">
+            <div className="w-12 h-12 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center mx-auto text-2xl">
+              👋
             </div>
-
             <div>
-              <h2 className="text-2xl font-black text-slate-900 font-arabic">
-                أهلاً بك يا {currentPlayer?.nickname || "بطل"}!
+              <h2 className="text-lg font-bold text-[#17324D]">
+                أهلاً بك يا {currentPlayer?.nickname}!
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-xs mx-auto leading-relaxed">
-                أنت الآن داخل الغرفة.. سيبدأ المضيف النشاط خلال لحظات.
+              <p className="text-xs text-[#60788C] mt-1">
+                أنت الآن متصل بالغرفة <span className="font-mono text-[#2F8FD8] font-bold">{roomCode}</span>
               </p>
             </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-              <span className="text-[11px] text-slate-500 block mb-1">النشاط المختار:</span>
-              <span className="text-sm font-bold text-spark-flame font-arabic">
-                {activity.titleAr}
-              </span>
+            <div className="p-3 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8] text-xs text-[#60788C]">
+              النشاط: <span className="font-bold text-[#17324D]">{activity.titleAr}</span>
             </div>
-
-            <div className="text-[11px] text-slate-400 animate-pulse">
+            <div className="text-[11px] text-[#60788C] animate-pulse">
               ابقَ في هذه الصفحة وراقب شاشة المضيف...
             </div>
           </div>
         )}
 
-        {/* 2. COUNTDOWN STATE */}
+        {/* 2. DYNAMIC COUNTDOWN STATE (3 -> 2 -> 1) */}
         {room.status === "COUNTDOWN" && (
-          <div className="text-center space-y-4 animate-scale-in py-12 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-            <div className="text-xl font-bold text-spark-flame font-arabic">استعد للإجابة...</div>
-            <div className="text-7xl font-black font-mono text-slate-900 animate-bounce-subtle">
-              3
+          <div className="text-center space-y-4 animate-scale-in py-12 bg-white rounded-2xl p-6 border border-[#E2EEF8] shadow-xs">
+            <div className="text-base font-bold text-[#2F8FD8] font-arabic">استعد للإجابة...</div>
+            <div
+              key={`play-countdown-${countdownVal}`}
+              className="text-8xl font-black font-mono text-[#17324D] animate-scale-in select-none"
+            >
+              {countdownVal}
             </div>
-            <div className="text-xs text-slate-500">انظر للشاشة الكبيرة ثم أجب فوراً!</div>
+            <div className="text-xs text-[#60788C]">انظر للشاشة الكبيرة ثم أجب فوراً!</div>
           </div>
         )}
 
         {/* 3. ACTIVE PLAYING ROUND */}
         {room.status === "PLAYING_ROUND" && currentRound && (
           <div key={`round-view-${currentRound.id}`} className="space-y-4 animate-scale-in w-full">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-500 pb-2 border-b border-slate-200">
+            <div className="flex items-center justify-between text-xs font-bold text-[#60788C] pb-2 border-b border-[#E2EEF8]">
               <span>جولة {room.currentRoundIndex + 1} من {activity.rounds?.length || 1}</span>
-              <div className="flex items-center gap-1.5 text-spark-flame font-mono font-bold bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200">
+              <div className="flex items-center gap-1.5 text-[#2F8FD8] font-mono font-bold bg-[#EAF7FF] px-2 py-0.5 rounded-lg border border-[#C9ECFF]">
                 <Clock className="w-3.5 h-3.5" />
                 <span>00:{secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}</span>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 text-center shadow-xs">
-              <h3 className="text-base sm:text-lg font-black text-slate-900 font-arabic">
+            <div className="p-4 rounded-xl bg-white border border-[#E2EEF8] text-center shadow-xs">
+              <h3 className="text-base sm:text-lg font-black text-[#17324D] leading-snug">
                 {currentRound.promptAr}
               </h3>
               {currentRound.subtitleAr && (
-                <p className="text-xs text-slate-500 mt-1">{currentRound.subtitleAr}</p>
+                <p className="text-xs text-[#60788C] mt-1">{currentRound.subtitleAr}</p>
               )}
             </div>
 
             {hasAnswered ? (
-              <div className="p-8 rounded-3xl bg-emerald-50 border border-emerald-200 text-center space-y-4 animate-scale-in my-6 shadow-xs">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto text-2xl shadow-sm shadow-emerald-500/30">
-                  <CheckCircle2 className="w-7 h-7" />
+              <div className="p-8 rounded-2xl bg-white border border-[#E2EEF8] text-center space-y-3 animate-scale-in my-4 shadow-xs">
+                <div className="w-12 h-12 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center mx-auto text-xl shadow-2xs">
+                  <CheckCircle2 className="w-6 h-6 text-[#2F8FD8]" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-emerald-950 font-arabic">تم تسجيل إجابتك بنجاح! 🎉</h4>
+                  <h4 className="text-base font-bold text-[#17324D]">تم تسجيل إجابتك بنجاح!</h4>
                   {selectedOption !== null && currentRound.optionsAr && currentRound.optionsAr[selectedOption] && (
-                    <div className="mt-3 inline-block px-4 py-2 rounded-2xl bg-white border border-emerald-200 text-emerald-900 font-bold text-sm shadow-2xs">
-                      اختيارك: <span className="text-spark-flame font-black">{currentRound.optionsAr[selectedOption]}</span>
+                    <div className="mt-2.5 inline-block px-3.5 py-1.5 rounded-lg bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] font-bold text-xs">
+                      اختيارك: {currentRound.optionsAr[selectedOption]}
                     </div>
                   )}
                   {textInput && activity.type === "WORD_CLOUD" && (
-                    <div className="mt-3 inline-block px-4 py-2 rounded-2xl bg-white border border-emerald-200 text-emerald-900 font-bold text-sm shadow-2xs">
+                    <div className="mt-2.5 inline-block px-3.5 py-1.5 rounded-lg bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] font-bold text-xs">
                       كلمتك: &ldquo;{textInput}&rdquo;
                     </div>
                   )}
-                  <p className="text-xs text-emerald-800 mt-3">
+                  <p className="text-xs text-[#60788C] mt-2">
                     في انتظار باقي الزملاء.. انظر للشاشة الكبيرة لمتابعة النتائج الحية!
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-2.5 pt-1">
                 {currentRound.optionsAr && currentRound.optionsAr.length > 0 && (
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-2.5">
                     {currentRound.optionsAr.map((opt, optIdx) => {
-                      const colors = [
-                        "from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 shadow-orange-500/20",
-                        "from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-indigo-500/20",
-                        "from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20",
-                        "from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 shadow-rose-500/20",
-                      ];
-                      const colorClass = colors[optIdx % colors.length];
-
                       return (
                         <button
                           key={`${currentRound.id}-opt-${optIdx}`}
                           type="button"
                           onClick={() => handleSubmitChoice(optIdx)}
-                          className={`w-full p-5 sm:p-6 rounded-2xl bg-gradient-to-r ${colorClass} text-white font-bold text-base sm:text-lg text-right active:scale-98 transition-transform shadow-md flex items-center justify-between touch-manipulation cursor-pointer select-none`}
+                          className="w-full p-4 sm:p-5 rounded-xl bg-white hover:bg-[#F4F9FD] border-2 border-[#E2EEF8] hover:border-[#2F8FD8] active:border-[#2F8FD8] active:bg-[#EAF7FF] text-[#17324D] font-bold text-base text-right active:scale-98 transition-all shadow-xs flex items-center justify-between touch-manipulation cursor-pointer select-none"
                         >
                           <span>{opt}</span>
-                          <span className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm font-mono font-bold">
+                          <span className="w-7 h-7 rounded-lg bg-[#EAF7FF] text-[#2F8FD8] border border-[#C9ECFF] flex items-center justify-center text-xs font-mono font-bold">
                             {optIdx + 1}
                           </span>
                         </button>
@@ -394,13 +398,13 @@ function PlayRoomContent() {
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
                       placeholder="اكتب كلمة واحدة أو اثنتين..."
-                      className="w-full py-4 px-4 bg-white border-2 border-slate-300 rounded-2xl text-base font-bold text-slate-900 text-center placeholder-slate-400 focus:outline-none focus:border-spark-flame shadow-xs"
+                      className="w-full py-3.5 px-4 bg-white border border-[#E2EEF8] rounded-xl text-base font-bold text-[#17324D] text-center placeholder-[#60788C] focus:outline-none focus:border-[#2F8FD8] shadow-xs"
                       autoFocus
                     />
                     <button
                       type="submit"
                       disabled={!textInput.trim()}
-                      className="w-full bg-spark-flame hover:bg-spark-flame/90 active:scale-98 transition-all py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 shadow-sm"
+                      className="w-full bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs"
                     >
                       <Send className="w-4 h-4 rotate-180" />
                       <span>إرسال كلمتي للمجموعة</span>
@@ -409,17 +413,16 @@ function PlayRoomContent() {
                 )}
 
                 {(!currentRound.optionsAr || currentRound.optionsAr.length === 0) && activity.type !== "WORD_CLOUD" && (
-                  <div className="space-y-3 pt-2">
-                    <p className="text-xs text-slate-500 text-center mb-2">تفاعل مع زملائك حسب التوجيه ثم أكّد إنجازك:</p>
+                  <div className="space-y-2.5 pt-1">
                     <button
                       onClick={() => handleSubmitChoice(0)}
-                      className="w-full p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-base text-center active:scale-98 transition-transform shadow-sm"
+                      className="w-full p-4 rounded-xl bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-sm text-center active:scale-98 transition-transform shadow-xs"
                     >
                       <span>أنجزت المهمة / شاركت فكرتي 👍</span>
                     </button>
                     <button
                       onClick={() => handleSubmitChoice(1)}
-                      className="w-full p-4 rounded-2xl bg-white border border-slate-300 text-slate-700 font-bold text-sm text-center active:scale-98 transition-transform"
+                      className="w-full p-3.5 rounded-xl bg-white border border-[#E2EEF8] text-[#60788C] font-bold text-xs text-center active:scale-98 transition-transform"
                     >
                       <span>مستمر في الحوار والتفاعل 💬</span>
                     </button>
@@ -432,19 +435,19 @@ function PlayRoomContent() {
 
         {/* 4. ROUND RESULTS VIEW */}
         {room.status === "ROUND_RESULTS" && (
-          <div className="text-center space-y-5 animate-scale-in py-8 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 text-spark-flame flex items-center justify-center mx-auto text-2xl">
+          <div className="text-center space-y-4 animate-scale-in py-8 bg-white rounded-2xl p-6 border border-[#E2EEF8] shadow-xs">
+            <div className="w-12 h-12 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center mx-auto text-xl">
               📊
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 font-arabic">
+              <h3 className="text-base font-bold text-[#17324D]">
                 انتهت الجولة {room.currentRoundIndex + 1}!
               </h3>
-              <p className="text-xs text-slate-600 mt-1">
+              <p className="text-xs text-[#60788C] mt-1">
                 النتائج الحية معروضة الآن على الشاشة الرئيسية.
               </p>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+            <div className="p-3 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8] text-xs text-[#60788C]">
               استعد للجولة التالية مع إشارة المضيف...
             </div>
           </div>
@@ -452,20 +455,17 @@ function PlayRoomContent() {
 
         {/* 5. FINAL CELEBRATION VIEW */}
         {room.status === "FINAL_CELEBRATION" && (
-          <div className="text-center space-y-5 animate-scale-in py-8 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-            <div className="w-16 h-16 rounded-3xl bg-orange-50 border border-orange-200 text-spark-flame flex items-center justify-center mx-auto text-3xl shadow-xs">
+          <div className="text-center space-y-4 animate-scale-in py-8 bg-white rounded-2xl p-6 border border-[#E2EEF8] shadow-xs">
+            <div className="w-12 h-12 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center mx-auto text-2xl">
               🏆
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 font-arabic">
-                أبدعتم جميعاً!
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                شكراً لمشاركتك يا {currentPlayer?.nickname}، تفاعلك أضاء الجلسة! ⚡
+              <h3 className="text-lg font-bold text-[#17324D]">
+                أحسنت يا {currentPlayer?.nickname}!
+              </h3>
+              <p className="text-xs text-[#60788C] mt-1">
+                انتهى النشاط بنجاح مع المجموعة.
               </p>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
-              انتهى النشاط.. استمتع ببقية ورشتك أو فعاليتك!
             </div>
           </div>
         )}
@@ -477,7 +477,11 @@ function PlayRoomContent() {
 
 export default function PlayRoomPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-slate-800">جاري الاتصال...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F4F9FD] flex items-center justify-center text-[#17324D]">
+        <div className="w-6 h-6 border-2 border-[#2F8FD8] border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
       <PlayRoomContent />
     </Suspense>
   );
