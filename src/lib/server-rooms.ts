@@ -146,9 +146,19 @@ export function addAnswerToServerRoom(
   if (!room) return { success: false };
 
   // Avoid duplicate answers from same player for same round
-  const existingIdx = room.answers.findIndex(
-    (a) => a.playerId === answer.playerId && a.roundId === answer.roundId
-  );
+  const currentSuffix = `-round-${(room.currentRoundIndex || 0) + 1}`;
+  const existingIdx = room.answers.findIndex((a) => {
+    if (a.playerId !== answer.playerId) return false;
+    if (a.roundId === answer.roundId) return true;
+    if (a.roundId.endsWith(currentSuffix) && answer.roundId.endsWith(currentSuffix)) return true;
+    if (
+      a.roundId === `round-${(room.currentRoundIndex || 0) + 1}` ||
+      answer.roundId === `round-${(room.currentRoundIndex || 0) + 1}`
+    ) {
+      return true;
+    }
+    return false;
+  });
 
   if (existingIdx >= 0) {
     room.answers[existingIdx] = answer;
@@ -167,3 +177,4 @@ export function addAnswerToServerRoom(
   saveServerRoom(room);
   return { success: true, room };
 }
+

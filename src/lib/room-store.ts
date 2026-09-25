@@ -64,6 +64,32 @@ class RoomManager {
       ) {
         return;
       }
+
+      // 3. Answer Protection: If the current client has submitted answers in the active round
+      // that the incoming server state doesn't have yet (due to replication delay or in-flight poll),
+      // merge the answers instead of erasing them!
+      if (
+        incoming.status === "PLAYING_ROUND" &&
+        current.status === "PLAYING_ROUND" &&
+        incoming.currentRoundIndex === current.currentRoundIndex &&
+        current.answers &&
+        current.answers.length > 0
+      ) {
+        const mergedAnswers = [...(incoming.answers || [])];
+        const currentSuffix = `-round-${(incoming.currentRoundIndex || 0) + 1}`;
+        for (const localAns of current.answers) {
+          const exists = mergedAnswers.some(
+            (inAns) =>
+              inAns.playerId === localAns.playerId &&
+              (inAns.roundId === localAns.roundId ||
+                (inAns.roundId.endsWith(currentSuffix) && localAns.roundId.endsWith(currentSuffix)))
+          );
+          if (!exists) {
+            mergedAnswers.push(localAns);
+          }
+        }
+        incoming.answers = mergedAnswers;
+      }
     }
 
     this.rooms.set(code, incoming);
@@ -461,10 +487,19 @@ class RoomManager {
 
     if (room) {
       // Prevent duplicate submission for same round
-      const existingIdx = room.answers.findIndex(
-        (a) => a.playerId === answer.playerId && a.roundId === answer.roundId
-      );
-      if (existingIdx >= 0) return;
+      const currentSuffix = `-round-${(room.currentRoundIndex || 0) + 1}`;
+      const existingIdx = room.answers.findIndex((a) => {
+        if (a.playerId !== answer.playerId) return false;
+        if (a.roundId === answer.roundId) return true;
+        if (a.roundId.endsWith(currentSuffix) && answer.roundId.endsWith(currentSuffix)) return true;
+        if (
+          a.roundId === `round-${(room.currentRoundIndex || 0) + 1}` ||
+          answer.roundId === `round-${(room.currentRoundIndex || 0) + 1}`
+        ) {
+          return true;
+        }
+        return false;
+      });
 
       sounds.playSelect();
 
@@ -479,16 +514,31 @@ class RoomManager {
         });
       }
 
-      const updatedAnswers = [...room.answers, answer];
+      let updatedAnswers: PlayerAnswer[];
+      if (existingIdx >= 0) {
+        updatedAnswers = [...room.answers];
+        updatedAnswers[existingIdx] = answer;
+      } else {
+        updatedAnswers = [...room.answers, answer];
+      }
+
       const updated: RoomState = {
         ...room,
         players: updatedPlayers,
         answers: updatedAnswers,
+        lastUpdatedAt: Date.now(),
+        version: (room.version || 0) + 1,
       };
 
       // Update local memory and notify listeners
       this.rooms.set(code, updated);
       this.notifyListeners(code, updated);
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(`spark_room_state_${code}`, JSON.stringify(updated));
+        } catch {}
+      }
 
       // Broadcast NEW_ANSWER to cross-tab Host without wiping room status
       const ch = this.getChannel(code);
@@ -499,16 +549,33 @@ class RoomManager {
       sounds.playSelect();
     }
 
-    // Sync answer to server API (only submits the answer, does NOT overwrite room state)
+    // Sync answer to server API with automatic retries to beat mobile lag/loss
     if (typeof window !== "undefined" && !room?.isDemo) {
-      fetch(`/api/rooms/${code}/answers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
-        },
-        body: JSON.stringify(answer),
-      }).catch(() => {});
+      const sendWithRetry = async (attemptsLeft = 3) => {
+        try {
+          const res = await fetch(`/api/rooms/${code}/answers`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-cache",
+            },
+            body: JSON.stringify(answer),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && data.room) {
+              this.applyIncomingState(code, data.room);
+            }
+          } else if (attemptsLeft > 0) {
+            setTimeout(() => sendWithRetry(attemptsLeft - 1), 600);
+          }
+        } catch (err) {
+          if (attemptsLeft > 0) {
+            setTimeout(() => sendWithRetry(attemptsLeft - 1), 600);
+          }
+        }
+      };
+      sendWithRetry();
     }
   }
 

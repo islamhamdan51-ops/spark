@@ -91,7 +91,22 @@ export default function HostRoomPage() {
 
   const rounds = (activity?.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
   const currentRound = (room && rounds[room.currentRoundIndex]) || rounds[0] || fallbackRound;
-  const roundAnswers = room?.answers?.filter((a) => a.roundId === currentRound?.id) || [];
+  // Flexible match so any format of round ID (or index suffix) is correctly recognized and displayed
+  const isAnswerForCurrentRound = (a: PlayerAnswer) => {
+    if (!a || !currentRound) return false;
+    if (a.roundId === currentRound.id) return true;
+    const suffix = `-round-${(room?.currentRoundIndex || 0) + 1}`;
+    if (a.roundId.endsWith(suffix) || currentRound.id.endsWith(suffix)) return true;
+    if (
+      a.roundId === `round-${(room?.currentRoundIndex || 0) + 1}` ||
+      currentRound.id === `round-${(room?.currentRoundIndex || 0) + 1}`
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const roundAnswers = room?.answers?.filter(isAnswerForCurrentRound) || [];
 
   const [secondsLeft, setSecondsLeft] = useState<number>(15);
 
@@ -127,7 +142,7 @@ export default function HostRoomPage() {
   // Clean transition when all connected players have answered
   useEffect(() => {
     if (room?.status !== "PLAYING_ROUND" || !currentRound || room.players.length === 0) return;
-    const answeredCount = room.answers?.filter((a) => a.roundId === currentRound.id).length || 0;
+    const answeredCount = room.answers?.filter(isAnswerForCurrentRound).length || 0;
     if (answeredCount >= room.players.length) {
       const timeout = setTimeout(() => {
         roomManager.showRoundResults(roomCode);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { 
   Sparkles, Check, CheckCircle2, Clock, 
@@ -26,6 +26,7 @@ function PlayRoomContent() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [textInput, setTextInput] = useState<string>("");
   const [secondsLeft, setSecondsLeft] = useState<number>(15);
+  const answeredRoundsRef = useRef<Map<number, { option?: number; text?: string }>>(new Map());
 
   useEffect(() => {
     if (!roomCode) return;
@@ -90,7 +91,17 @@ function PlayRoomContent() {
   const rounds = (activity?.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
   const currentRound = (room && rounds[room.currentRoundIndex]) || rounds[0] || fallbackRound;
 
-  // Accurately synchronize answering state with room.answers
+  // Accurately check if an answer belongs to the current round
+  const isMatchRound = (roundId: string, roundIdx: number) => {
+    if (!roundId) return false;
+    if (currentRound && roundId === currentRound.id) return true;
+    const suffix = `-round-${roundIdx + 1}`;
+    if (roundId.endsWith(suffix) || (currentRound && currentRound.id.endsWith(suffix))) return true;
+    if (roundId === `round-${roundIdx + 1}`) return true;
+    return false;
+  };
+
+  // Accurately synchronize answering state with local lock + room.answers
   useEffect(() => {
     if (!room || !currentPlayer || !currentRound || room.status !== "PLAYING_ROUND") {
       setHasAnswered(false);
@@ -99,23 +110,56 @@ function PlayRoomContent() {
       return;
     }
 
-    const myAns = room.answers?.find(
-      (a) => a.playerId === currentPlayer.id && a.roundId === currentRound.id
+    const roundIdx = room.currentRoundIndex ?? 0;
+    const localRecord = answeredRoundsRef.current.get(roundIdx);
+
+    // 1. Check if server confirmed our answer
+    const serverAns = room.answers?.find(
+      (a) => a.playerId === currentPlayer.id && isMatchRound(a.roundId, roundIdx)
     );
 
-    if (myAns) {
+    if (serverAns) {
       setHasAnswered(true);
-      if (typeof myAns.answer === "number") {
-        setSelectedOption(myAns.answer);
-      } else if (typeof myAns.answer === "string") {
-        setTextInput(myAns.answer);
+      if (typeof serverAns.answer === "number") {
+        setSelectedOption(serverAns.answer);
+      } else if (typeof serverAns.answer === "string") {
+        setTextInput(serverAns.answer);
       }
-    } else {
-      setHasAnswered(false);
-      setSelectedOption(null);
-      setTextInput("");
+      answeredRoundsRef.current.set(roundIdx, {
+        option: typeof serverAns.answer === "number" ? serverAns.answer : undefined,
+        text: typeof serverAns.answer === "string" ? serverAns.answer : undefined,
+      });
+      return;
     }
-  }, [room?.currentRoundIndex, room?.status, room?.answers, currentPlayer?.id, currentRound?.id]);
+
+    // 2. If locally locked in this round, NEVER drop it even if an in-flight poll returned older state!
+    if (localRecord) {
+      setHasAnswered(true);
+      if (localRecord.option !== undefined) setSelectedOption(localRecord.option);
+      if (localRecord.text !== undefined) setTextInput(localRecord.text);
+      return;
+    }
+
+    // 3. Check sessionStorage in case of page reload during active round
+    try {
+      const saved = sessionStorage.getItem(`spark_ans_${roomCode}_${roundIdx}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed) {
+          answeredRoundsRef.current.set(roundIdx, parsed);
+          setHasAnswered(true);
+          if (parsed.option !== undefined) setSelectedOption(parsed.option);
+          if (parsed.text !== undefined) setTextInput(parsed.text);
+          return;
+        }
+      }
+    } catch {}
+
+    // 4. Otherwise, user has not answered this new round yet
+    setHasAnswered(false);
+    setSelectedOption(null);
+    setTextInput("");
+  }, [room?.currentRoundIndex, room?.status, room?.answers, currentPlayer?.id, currentRound?.id, roomCode]);
 
   // Synchronized countdown timer based on roundStartTime
   useEffect(() => {
@@ -155,6 +199,12 @@ function PlayRoomContent() {
     setSelectedOption(optionIndex);
     setHasAnswered(true);
 
+    const roundIdx = room?.currentRoundIndex ?? 0;
+    answeredRoundsRef.current.set(roundIdx, { option: optionIndex });
+    try {
+      sessionStorage.setItem(`spark_ans_${roomCode}_${roundIdx}`, JSON.stringify({ option: optionIndex }));
+    } catch {}
+
     const isCorrect = currentRound.correctAnswer !== undefined ? optionIndex === currentRound.correctAnswer : undefined;
     const points = isCorrect ? 100 : 0;
 
@@ -175,14 +225,21 @@ function PlayRoomContent() {
     e.preventDefault();
     if (hasAnswered || !currentPlayer || !currentRound || !textInput.trim()) return;
 
+    const textVal = textInput.trim();
     sounds.playSelect();
     setHasAnswered(true);
+
+    const roundIdx = room?.currentRoundIndex ?? 0;
+    answeredRoundsRef.current.set(roundIdx, { text: textVal });
+    try {
+      sessionStorage.setItem(`spark_ans_${roomCode}_${roundIdx}`, JSON.stringify({ text: textVal }));
+    } catch {}
 
     const answer: PlayerAnswer = {
       playerId: currentPlayer.id,
       playerNickname: currentPlayer.nickname,
       roundId: currentRound.id,
-      answer: textInput.trim(),
+      answer: textVal,
       answeredAt: Date.now(),
     };
 
@@ -284,7 +341,17 @@ function PlayRoomContent() {
                 </div>
                 <div>
                   <h4 className="text-lg font-bold text-emerald-950 font-arabic">تم تسجيل إجابتك بنجاح! 🎉</h4>
-                  <p className="text-xs text-emerald-800 mt-1">
+                  {selectedOption !== null && currentRound.optionsAr && currentRound.optionsAr[selectedOption] && (
+                    <div className="mt-3 inline-block px-4 py-2 rounded-2xl bg-white border border-emerald-200 text-emerald-900 font-bold text-sm shadow-2xs">
+                      اختيارك: <span className="text-spark-flame font-black">{currentRound.optionsAr[selectedOption]}</span>
+                    </div>
+                  )}
+                  {textInput && activity.type === "WORD_CLOUD" && (
+                    <div className="mt-3 inline-block px-4 py-2 rounded-2xl bg-white border border-emerald-200 text-emerald-900 font-bold text-sm shadow-2xs">
+                      كلمتك: &ldquo;{textInput}&rdquo;
+                    </div>
+                  )}
+                  <p className="text-xs text-emerald-800 mt-3">
                     في انتظار باقي الزملاء.. انظر للشاشة الكبيرة لمتابعة النتائج الحية!
                   </p>
                 </div>
