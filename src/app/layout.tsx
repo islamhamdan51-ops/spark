@@ -16,14 +16,23 @@ export const metadata: Metadata = {
   },
 };
 
+import { Cairo } from "next/font/google";
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-cairo",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className="min-h-screen bg-[#F8F9FA] text-slate-900 flex flex-col font-arabic selection:bg-spark-flame selection:text-white">
+    <html lang="ar" dir="rtl" className={cairo.variable}>
+      <body className={`min-h-screen bg-[#F4F9FD] text-[#17324D] flex flex-col font-arabic selection:bg-[#C9ECFF] selection:text-[#17324D] ${cairo.className}`}>
         {children}
       </body>
     </html>

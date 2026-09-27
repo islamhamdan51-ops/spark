@@ -51,39 +51,42 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* 01 — HERO SECTION */}
-        <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 bg-white border-b border-[#E2EEF8]">
+        <section className="relative overflow-hidden pt-14 pb-16 lg:pt-20 lg:pb-24 bg-white border-b border-[#E2EEF8]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             
-            {/* Small Brand Label */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] text-xs font-bold mb-6">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>SPARK / شرارة</span>
+            {/* Harmonized Brand Badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] text-xs font-bold mb-6 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#2F8FD8]" />
+              <span>منصة شرارة • أنشطة وتفاعل فوري</span>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#17324D] leading-[1.2] tracking-tight">
-              ما تعرفش شنو تدير مع المجموعة؟
+            {/* Main Headline with balanced typography and accent */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold text-[#17324D] leading-[1.25] tracking-tight max-w-2xl sm:max-w-3xl mx-auto [text-wrap:balance]">
+              ما تعرفش شنو تدير{" "}
+              <span className="text-[#2F8FD8]">مع المجموعة؟</span>
             </h1>
 
-            {/* Supporting Line */}
-            <p className="text-base sm:text-lg text-[#60788C] max-w-xl mx-auto mt-4 leading-relaxed font-medium">
-              شرارة تختار لك النشاط المناسب وتبدأه مع المجموعة خلال دقائق.
+            {/* Supporting Subtitle */}
+            <p className="text-base sm:text-lg text-[#60788C] max-w-xl mx-auto mt-4 leading-relaxed font-medium [text-wrap:balance]">
+              شرارة تختار لك النشاط المناسب وتبدأه مع مجموعتك خلال دقائق.
             </p>
 
-            {/* Primary & Secondary CTAs */}
+            {/* Harmonized, Symmetrical CTAs */}
             <div className="flex flex-wrap items-center justify-center gap-3.5 pt-8">
               <button
                 onClick={() => setWizardOpen(true)}
-                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-8 py-3.5 rounded-xl text-white font-bold text-base shadow-xs"
+                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-[0.98] transition-all px-7 py-3.5 rounded-xl text-white font-bold text-base shadow-sm hover:shadow-md inline-flex items-center justify-center gap-2 min-w-[155px]"
               >
-                ابدأ الآن
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>ابدأ الآن</span>
               </button>
 
               <Link
                 href="/demo"
-                className="px-7 py-3.5 rounded-xl border border-[#2F8FD8] bg-white hover:bg-[#F0F8FF] text-[#2F8FD8] font-bold text-base transition-all"
+                className="px-7 py-3.5 rounded-xl bg-[#EAF7FF] hover:bg-[#DDF2FF] border border-[#A9DFFF] text-[#1F7EC7] font-bold text-base shadow-2xs transition-all active:scale-[0.98] inline-flex items-center justify-center gap-2 min-w-[155px]"
               >
-                جرّب Demo
+                <Play className="w-4 h-4 fill-current text-[#1F7EC7]" />
+                <span>تجربة تفاعلية</span>
               </Link>
             </div>
 
@@ -93,8 +96,8 @@ export default function HomePage() {
                 <span>نشاط تجريبي: لو خيّروك</span>
                 <span className="text-[#2F8FD8] font-mono bg-[#EAF7FF] px-2 py-0.5 rounded-md">30 ثانية</span>
               </div>
-              <h3 className="text-lg font-bold text-[#17324D]">
-                شن تختار لو أتيحت لك فرصة واحدة؟
+              <h3 className="text-base sm:text-lg font-bold text-[#17324D]">
+                ماذا تختار لو أتيحت لك فرصة واحدة؟
               </h3>
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div className="p-3.5 rounded-xl bg-[#F4F9FD] border border-[#C9ECFF] text-center font-bold text-sm text-[#2F8FD8] cursor-pointer hover:bg-[#EAF7FF] transition-colors">
@@ -114,11 +117,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 02 — INTENT SECTION: "شن تحتاج من المجموعة؟" */}
+        {/* 02 — INTENT SECTION */}
         <section className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
-              شن تحتاج من المجموعة؟
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#17324D]">
+              ماذا تحتاج لمجموعتك اليوم؟
             </h2>
             <p className="text-sm text-[#60788C] mt-1 font-medium">
               اختر الهدف، وستظهر لك الأنشطة المصممة له بدقة:
@@ -210,7 +213,7 @@ export default function HomePage() {
             <div className="space-y-1 text-center sm:text-right">
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <span className="text-xl">🎲</span>
-                <h3 className="text-lg font-bold text-[#17324D]">محتار وما عندكش وقت للتفكير؟</h3>
+                <h3 className="text-lg font-bold text-[#17324D]">محتار وما عندك وقت للتفكير؟</h3>
               </div>
               <p className="text-xs sm:text-sm text-[#60788C]">
                 اضغط على زر &quot;أنقذني&quot; وسنختار لك نشاطاً فورياً يناسب مجموعتك وطاقتكم الآن.
@@ -222,7 +225,7 @@ export default function HomePage() {
               className="px-6 py-3 rounded-xl bg-[#EAF7FF] hover:bg-[#DDF2FF] border border-[#A9DFFF] text-[#2F8FD8] text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap shadow-2xs"
             >
               <Dices className="w-4 h-4 text-[#2F8FD8]" />
-              <span>🎲 أنقذني</span>
+              <span>أنقذني بنشاط</span>
             </button>
           </div>
         </section>
@@ -285,7 +288,7 @@ export default function HomePage() {
         {/* 05 — HOW IT WORKS: 3 SIMPLE STEPS */}
         <section id="how-it-works" className="py-16 bg-white border-t border-[#E2EEF8]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#17324D]">
               كيف تعمل شرارة؟
             </h2>
             <p className="text-sm text-[#60788C] mt-1 font-medium">
