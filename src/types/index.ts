@@ -49,7 +49,12 @@ export type GoalType =
   | "discussion"
   | "creativity"
   | "faith"
-  | "learning";
+  | "learning"
+  | "reflection"
+  | "values"
+  | "movement"
+  | "thinking"
+  | "arabic";
 
 export interface ActivityRound {
   id: string;
@@ -170,7 +175,17 @@ export interface RoomState {
   soundEnabled: boolean;
   version?: number;
   lastUpdatedAt?: number;
+  // Session engine extensions
+  session?: import("./session").SparkSession;
+  currentSessionStageIndex?: number;
+  sessionPulseHistory?: import("./session").SessionPulseEntry[];
+  timeRescueActive?: boolean;
+  timeRescueMessage?: string;
+  compressedRoundsCount?: number;
+  facilitatorNotes?: string;
 }
+
+export * from "./session";
 
 export interface WizardAnswers {
   playerCount: "2-5" | "6-10" | "11-20" | "21-40" | "40+";

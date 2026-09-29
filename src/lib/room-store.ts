@@ -1,5 +1,6 @@
-import { RoomState, Player, PlayerAnswer, RoomStatus, ActivityRound } from "@/types";
-import { ACTIVITIES } from "@/data/activities";
+import { RoomState, Player, PlayerAnswer, RoomStatus, ActivityRound, SparkSession, SessionReport, EnergyLevel } from "@/types";
+import { ACTIVITIES, getActivityBySlug } from "@/data/activities";
+import { compressSessionForTimeRescue } from "./session-engine";
 import { createSimulatedPlayers, simulateRoundAnswers } from "./demo-engine";
 import { sounds } from "./sound";
 import {
@@ -631,6 +632,207 @@ class RoomManager {
       version: (room.version || 0) + 1,
     };
     this.persistAndBroadcast(code, updated);
+  }
+
+  // ==========================================
+  // SPARK SESSION ENGINE METHODS
+  // ==========================================
+  public attachSession(code: string, session: SparkSession) {
+    const room = this.rooms.get(code) || this.getLocalRoom(code);
+    if (!room) return;
+
+    const firstStage = session.stages[0];
+    const updated: RoomState = {
+      ...room,
+      session,
+      currentSessionStageIndex: 0,
+      activityId: firstStage ? firstStage.activity.id : room.activityId,
+      activitySlug: firstStage ? firstStage.activity.slug : room.activitySlug,
+      currentRoundIndex: 0,
+      roundTimer: firstStage?.activity.rounds?.[0]?.timeLimit || 15,
+      answers: [],
+      sessionPulseHistory: [],
+      timeRescueActive: false,
+      timeRescueMessage: undefined,
+      compressedRoundsCount: undefined,
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
+    };
+    this.persistAndBroadcast(code, updated);
+  }
+
+  public nextSessionStage(code: string) {
+    const room = this.rooms.get(code) || this.getLocalRoom(code);
+    if (!room || !room.session) return;
+
+    const nextStageIdx = (room.currentSessionStageIndex || 0) + 1;
+    if (nextStageIdx < room.session.stages.length) {
+      const nextStage = room.session.stages[nextStageIdx];
+      sounds.playRoundStart();
+      const updated: RoomState = {
+        ...room,
+        currentSessionStageIndex: nextStageIdx,
+        activityId: nextStage.activity.id,
+        activitySlug: nextStage.activity.slug,
+        status: "PLAYING_ROUND",
+        currentRoundIndex: 0,
+        roundTimer: nextStage.activity.rounds?.[0]?.timeLimit || 20,
+        roundStartTime: Date.now(),
+        answers: [],
+        timeRescueActive: false,
+        timeRescueMessage: undefined,
+        lastUpdatedAt: Date.now(),
+        version: (room.version || 0) + 1,
+      };
+      this.persistAndBroadcast(code, updated);
+    } else {
+      this.finishSession(code);
+    }
+  }
+
+  public recordSessionPulse(code: string, level: EnergyLevel) {
+    const room = this.rooms.get(code) || this.getLocalRoom(code);
+    if (!room) return;
+
+    const currentStage = room.session?.stages[room.currentSessionStageIndex || 0];
+    const pulseEntry = {
+      timestamp: Date.now(),
+      level,
+      stageIndex: room.currentSessionStageIndex || 0,
+      stageTitleAr: currentStage ? currentStage.titleAr : "نشاط",
+    };
+
+    const history = [...(room.sessionPulseHistory || []), pulseEntry];
+    const updated: RoomState = {
+      ...room,
+      sessionPulseHistory: history,
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
+    };
+    this.persistAndBroadcast(code, updated);
+  }
+
+  public applyTimeRescue(code: string, remainingMinutes: number) {
+    const room = this.rooms.get(code) || this.getLocalRoom(code);
+    if (!room) return;
+
+    let message = `اختصرنا الجلسة لتناسب ${remainingMinutes} دقائق متبقية.`;
+    let compressedRounds = 2;
+
+    let updatedSession = room.session;
+    if (room.session) {
+      const res = compressSessionForTimeRescue(
+        room.session,
+        remainingMinutes,
+        room.currentSessionStageIndex || 0
+      );
+      updatedSession = res.updatedSession;
+      message = res.messageAr;
+      compressedRounds = res.compressedRoundsCount;
+    } else {
+      compressedRounds = remainingMinutes <= 3 ? 2 : 3;
+      message = `اختصرنا الجولة إلى ${compressedRounds} أسئلة لتناسب ${remainingMinutes} دقائق متبقية. ⏱️`;
+    }
+
+    const updated: RoomState = {
+      ...room,
+      session: updatedSession,
+      timeRescueActive: true,
+      timeRescueMessage: message,
+      compressedRoundsCount: compressedRounds,
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
+    };
+
+    this.persistAndBroadcast(code, updated);
+  }
+
+  public applyRescueActivity(code: string, activitySlug: string) {
+    const room = this.rooms.get(code) || this.getLocalRoom(code);
+    if (!room) return;
+
+    const act = getActivityBySlug(activitySlug) || ACTIVITIES[0];
+    sounds.playRoundStart();
+
+    const updated: RoomState = {
+      ...room,
+      activityId: act.id,
+      activitySlug: act.slug,
+      status: "PLAYING_ROUND",
+      currentRoundIndex: 0,
+      roundTimer: act.rounds?.[0]?.timeLimit || 20,
+      roundStartTime: Date.now(),
+      answers: [],
+      timeRescueActive: true,
+      timeRescueMessage: `تم تفعيل نشاط الإنقاذ السريع: "${act.titleAr}" لرفع طاقة القاعة! ⚡`,
+      lastUpdatedAt: Date.now(),
+      version: (room.version || 0) + 1,
+    };
+
+    this.persistAndBroadcast(code, updated);
+  }
+
+  public finishSession(code: string): SessionReport {
+    const room = this.rooms.get(code) || this.getLocalRoom(code);
+    sounds.playCelebration();
+
+    const session = room?.session;
+    const stages = session?.stages || [];
+    const totalStages = Math.max(1, stages.length);
+    const completedStages = (room?.currentSessionStageIndex || 0) + 1;
+    const completionRate = Math.min(100, Math.round((completedStages / totalStages) * 100));
+
+    // Participation signal calculation
+    const answeredCount = room?.answers?.length || 0;
+    const playerCount = Math.max(1, room?.players?.length || 1);
+    const participationRate = answeredCount / (playerCount * Math.max(1, completedStages));
+    let participationSignal: "low" | "medium" | "high" = "high";
+    if (participationRate < 0.4) participationSignal = "low";
+    else if (participationRate < 0.7) participationSignal = "medium";
+
+    const report: SessionReport = {
+      id: `rep-${Date.now()}`,
+      sessionId: session?.id || `sess-${code}`,
+      sessionTitleAr: session?.titleAr || (room ? ACTIVITIES.find((a) => a.slug === room.activitySlug)?.titleAr || "جلسة شرارة" : "جلسة شرارة"),
+      createdAt: Date.now(),
+      plannedDurationMinutes: session?.totalDuration || 30,
+      actualDurationMinutes: Math.max(5, Math.round((Date.now() - (room?.createdAt || Date.now())) / 60000)),
+      participantCount: room?.players?.length || 0,
+      completedStagesCount: completedStages,
+      totalStagesCount: totalStages,
+      completionRatePercent: completionRate,
+      participationSignal,
+      mostEngagingActivityTitleAr: stages[0]?.titleAr || (room ? ACTIVITIES.find((a) => a.slug === room.activitySlug)?.titleAr || "نشاط التفاعل" : "نشاط التفاعل"),
+      pulseHistory: room?.sessionPulseHistory || [],
+      facilitatorNotes: room?.facilitatorNotes,
+      completedActivities: stages.slice(0, completedStages).map((s) => ({
+        titleAr: s.titleAr,
+        stageType: s.stageType,
+        durationMinutes: s.durationMinutes,
+      })),
+    };
+
+    // Save report to localStorage for Session History
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("spark_session_reports");
+        const reports: SessionReport[] = stored ? JSON.parse(stored) : [];
+        reports.unshift(report);
+        localStorage.setItem("spark_session_reports", JSON.stringify(reports.slice(0, 30)));
+      } catch {}
+    }
+
+    if (room) {
+      const updated: RoomState = {
+        ...room,
+        status: "FINAL_CELEBRATION",
+        lastUpdatedAt: Date.now(),
+        version: (room.version || 0) + 1,
+      };
+      this.persistAndBroadcast(code, updated);
+    }
+
+    return report;
   }
 }
 

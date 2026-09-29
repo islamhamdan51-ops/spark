@@ -7,14 +7,16 @@ import confetti from "canvas-confetti";
 import { 
   Sparkles, Play, Users, Clock, QrCode, Maximize2, Minimize2, 
   Volume2, VolumeX, RotateCcw, ChevronRight, CheckCircle2, 
-  Eye, EyeOff, Shield, Trophy, ArrowLeft, Copy, Check, Dice5, Share2
+  Eye, EyeOff, Shield, Trophy, ArrowLeft, Copy, Check, Dice5, Share2,
+  AlertTriangle, Hourglass, Compass, LifeBuoy, FileText
 } from "lucide-react";
 import { roomManager } from "@/lib/room-store";
 import { getActivityBySlug, ACTIVITIES } from "@/data/activities";
-import { RoomState, Activity, Player, PlayerAnswer, ActivityRound } from "@/types";
+import { RoomState, Activity, Player, PlayerAnswer, ActivityRound, EnergyLevel } from "@/types";
 import { QRCodeView } from "@/components/common/QRCodeView";
 import { resolveJoinUrl } from "@/lib/get-join-url";
 import { sounds } from "@/lib/sound";
+import { getRescueIntervention, getNextSmartActivityRecommendation } from "@/lib/session-engine";
 
 export default function HostRoomPage() {
   const params = useParams();
@@ -32,6 +34,12 @@ export default function HostRoomPage() {
   const [stopwatchRunning, setStopwatchRunning] = useState<boolean>(false);
   const [countdownVal, setCountdownVal] = useState<number>(3);
 
+  // Facilitator Platform extensions
+  const [facilitatorModeOpen, setFacilitatorModeOpen] = useState<boolean>(true);
+  const [timeRescueModalOpen, setTimeRescueModalOpen] = useState<boolean>(false);
+  const [rescueModalOpen, setRescueModalOpen] = useState<boolean>(false);
+  const [pulseAlert, setPulseAlert] = useState<string | null>(null);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stopwatchRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -45,6 +53,20 @@ export default function HostRoomPage() {
 
     const urlAct = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("act") : null;
     const initial = roomManager.getOrCreateRoom(roomCode, urlAct || "this-or-that");
+    
+    // Auto-restore attached session if present in localStorage or initial room
+    if (typeof window !== "undefined") {
+      try {
+        const savedSession = localStorage.getItem(`spark_active_session_${roomCode}`);
+        if (savedSession && !initial.session) {
+          const parsed = JSON.parse(savedSession);
+          if (parsed) {
+            roomManager.attachSession(roomCode, parsed);
+          }
+        }
+      } catch {}
+    }
+
     setRoom(initial);
     const act = getActivityBySlug(initial.activitySlug) || ACTIVITIES[0];
     setActivity(act);
@@ -227,9 +249,13 @@ export default function HostRoomPage() {
     }, 3000);
   };
 
+  const effectiveRoundsCount = room.compressedRoundsCount || (activity.rounds?.length || 1);
+
   const handleNextRoundOrFinish = () => {
-    roomManager.nextRoundOrFinish(roomCode);
-    if (room.currentRoundIndex + 1 >= (activity.rounds?.length || 1)) {
+    if (room.currentRoundIndex + 1 < effectiveRoundsCount) {
+      roomManager.launchRound(roomCode, room.currentRoundIndex + 1);
+    } else {
+      sounds.playCelebration();
       try {
         confetti({
           particleCount: 80,
@@ -237,6 +263,7 @@ export default function HostRoomPage() {
           origin: { y: 0.6 },
         });
       } catch {}
+      roomManager.nextRoundOrFinish(roomCode);
     }
   };
 
@@ -250,6 +277,18 @@ export default function HostRoomPage() {
     roomManager.resetRoom(roomCode);
     window.location.href = `/host/${roomCode}?act=${nextAct.slug}`;
   };
+
+  const handleRecordPulse = (level: EnergyLevel) => {
+    roomManager.recordSessionPulse(roomCode, level);
+    const label = level === "high" ? "🔥 طاقة عالية" : level === "medium" ? "🌤️ طاقة معتدلة" : "🧊 طاقة هادئة";
+    setPulseAlert(`تم تسجيل النبض (${label}) ✓`);
+    setTimeout(() => setPulseAlert(null), 3000);
+  };
+
+  const currentStage = room.session?.stages[room.currentSessionStageIndex || 0];
+  const nextStage = room.session?.stages[(room.currentSessionStageIndex || 0) + 1];
+  const rescueIntervention = getRescueIntervention(room.session || null, 6);
+  const smartRecommendation = getNextSmartActivityRecommendation(activity, room.session || null, "medium");
 
   return (
     <div
@@ -293,6 +332,18 @@ export default function HostRoomPage() {
 
         {/* Right: Sound & Presentation Display Modes */}
         <div className="flex items-center gap-2">
+          {/* Facilitator Mode toggle */}
+          <button
+            onClick={() => setFacilitatorModeOpen(!facilitatorModeOpen)}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 ${
+              facilitatorModeOpen
+                ? "bg-[#EAF7FF] text-[#2F8FD8] border border-[#C9ECFF]"
+                : "bg-[#F4F9FD] text-[#60788C] hover:text-[#17324D]"
+            }`}
+          >
+            <span>🧭 وضع الميسر</span>
+          </button>
+
           <button
             onClick={handleToggleSound}
             aria-label={isMuted ? "تشغيل الصوت" : "كتم الصوت"}
@@ -312,6 +363,145 @@ export default function HostRoomPage() {
           </button>
         </div>
       </header>
+
+      {/* SESSION ENGINE RIBBON & FACILITATOR BAR */}
+      <section className="max-w-5xl mx-auto w-full mb-6 space-y-3">
+        {/* Active Session Ribbon */}
+        {room.session && (
+          <div className="bg-white rounded-2xl border border-[#C9ECFF] p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-[#2F8FD8] bg-[#EAF7FF] px-2.5 py-1 rounded-md">
+                جلسة: {room.session.titleAr}
+              </span>
+              <span className="text-[#60788C] font-medium">
+                المرحلة {(room.currentSessionStageIndex || 0) + 1} من {room.session.stages.length}:{" "}
+                <strong className="text-[#17324D]">{currentStage?.titleAr || activity.titleAr}</strong>
+              </span>
+              {currentStage?.timeRange && (
+                <span className="font-mono text-[#60788C] bg-[#F4F9FD] px-2 py-0.5 rounded border border-[#E2EEF8]">
+                  {currentStage.timeRange}
+                </span>
+              )}
+            </div>
+
+            {/* Quick intervention buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTimeRescueModalOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold transition-colors flex items-center gap-1"
+              >
+                <Hourglass className="w-3.5 h-3.5" />
+                <span>اختصر الجلسة</span>
+              </button>
+
+              <button
+                onClick={() => setRescueModalOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold transition-colors flex items-center gap-1"
+              >
+                <LifeBuoy className="w-3.5 h-3.5" />
+                <span>🆘 أنقذني</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Time Rescue Alert Banner */}
+        {room.timeRescueActive && room.timeRescueMessage && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-2 text-xs font-bold flex items-center justify-between animate-scale-in">
+            <div className="flex items-center gap-2">
+              <Hourglass className="w-4 h-4 text-amber-600 animate-pulse" />
+              <span>{room.timeRescueMessage}</span>
+            </div>
+            <span className="text-[11px] bg-white px-2 py-0.5 rounded text-amber-900 border border-amber-200">
+              تم الضغط
+            </span>
+          </div>
+        )}
+
+        {/* Facilitator Pulse Checkpoint */}
+        <div className="bg-white/80 backdrop-blur-xs rounded-xl border border-[#E2EEF8] px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[#60788C] font-bold">نبض المجموعة الآن (Pulse):</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => handleRecordPulse("calm")}
+                className="px-2 py-1 rounded-lg hover:bg-[#F4F9FD] border border-[#E2EEF8] text-[#17324D] transition-colors"
+                title="طاقة هادئة أو تراجع التركيز"
+              >
+                🧊 هادئة
+              </button>
+              <button
+                onClick={() => handleRecordPulse("medium")}
+                className="px-2 py-1 rounded-lg hover:bg-[#F4F9FD] border border-[#E2EEF8] text-[#17324D] transition-colors"
+                title="طاقة متوازنة وتفاعل جيد"
+              >
+                🌤️ معتدلة
+              </button>
+              <button
+                onClick={() => handleRecordPulse("high")}
+                className="px-2 py-1 rounded-lg hover:bg-[#F4F9FD] border border-[#E2EEF8] text-[#17324D] transition-colors"
+                title="حماس عالي وتفاعل نشط جداً"
+              >
+                🔥 حماسية
+              </button>
+            </div>
+            {pulseAlert && (
+              <span className="text-emerald-600 font-bold text-[11px] animate-scale-in">
+                {pulseAlert}
+              </span>
+            )}
+          </div>
+
+          {!room.session && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTimeRescueModalOpen(true)}
+                className="text-[11px] text-[#60788C] hover:text-[#17324D] font-bold underline"
+              >
+                ضاق الوقت؟ اختصر
+              </button>
+              <button
+                onClick={() => setRescueModalOpen(true)}
+                className="text-[11px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1"
+              >
+                <span>🆘 أنقذ الجلسة</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 14 — FACILITATOR MODE ASSISTANT BOX */}
+        {facilitatorModeOpen && (
+          <div className="bg-[#EAF7FF]/60 border border-[#C9ECFF] rounded-2xl p-4 shadow-2xs grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-scale-in">
+            <div className="space-y-1">
+              <span className="font-bold text-[#2F8FD8] flex items-center gap-1">
+                <span>🎯 الآن (NOW):</span>
+              </span>
+              <p className="text-[#17324D] leading-relaxed">
+                {currentStage?.nowInstructionAr || activity.instructions.hostAr?.[0] || "ابدأ النشاط ووجّه المجموعة للمشاركة."}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="font-bold text-amber-700 flex items-center gap-1">
+                <span>⏭️ التالي (NEXT):</span>
+              </span>
+              <p className="text-[#17324D] leading-relaxed">
+                {currentStage?.nextInstructionAr || "بعد 30 ثانية انتقل للجولة التالية أو عرض النتائج."}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="font-bold text-emerald-700 flex items-center gap-1">
+                <span>💡 نصيحة الميسر (TIP):</span>
+              </span>
+              <p className="text-[#17324D] leading-relaxed">
+                {currentStage?.facilitatorTipAr || activity.whyRecommended || "مع المجموعة الكبيرة، اجعل الإجابة جماعية بصوت واحد."}
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* HOST MAIN CONTENT STAGE */}
       <main className="max-w-5xl mx-auto w-full flex-1 flex flex-col justify-center items-center">
@@ -638,59 +828,281 @@ export default function HostRoomPage() {
           </div>
         )}
 
-        {/* 29 — FINAL CELEBRATION VIEW */}
+        {/* 29 — FINAL CELEBRATION & NEXT STAGE JOURNEY */}
         {room.status === "FINAL_CELEBRATION" && (
-          <div className="w-full max-w-xl bg-white rounded-2xl p-8 sm:p-10 text-center border border-[#E2EEF8] shadow-xs relative overflow-hidden animate-scale-in space-y-4">
+          <div className="w-full max-w-2xl bg-white rounded-2xl p-8 sm:p-10 text-center border border-[#E2EEF8] shadow-xs relative overflow-hidden animate-scale-in space-y-6">
             <div className="w-12 h-12 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] flex items-center justify-center mx-auto text-2xl">
               ✨
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
-              انتهت الشرارة ✨
-            </h2>
-            <p className="text-xs sm:text-sm text-[#60788C]">
-              أنجزتم النشاط معاً وارتفعت طاقة المجموعة.
-            </p>
+            {/* Check if Session has next stage or if all session finished */}
+            {room.session && nextStage ? (
+              <div className="space-y-4">
+                <div>
+                  <span className="text-xs font-bold text-[#2F8FD8] uppercase tracking-wider block">
+                    انتهى النشاط الحالي بنجاح! 👏
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-[#17324D] mt-1">
+                    المجموعة الآن جاهزة للخطوة التالية.
+                  </h2>
+                </div>
 
-            {/* Session Stats */}
-            <div className="grid grid-cols-3 gap-3 my-4 py-3 border-y border-[#E2EEF8] text-center">
-              <div className="p-3 rounded-xl bg-[#F4F9FD]">
-                <span className="text-lg font-bold text-[#17324D] font-mono">{room.players.length}</span>
-                <span className="text-[11px] text-[#60788C] block mt-0.5">مشاركاً</span>
-              </div>
-              <div className="p-3 rounded-xl bg-[#F4F9FD]">
-                <span className="text-lg font-bold text-[#2F8FD8] font-mono">
-                  {activity.rounds?.length || 1}
-                </span>
-                <span className="text-[11px] text-[#60788C] block mt-0.5">جولات</span>
-              </div>
-              <div className="p-3 rounded-xl bg-[#F4F9FD]">
-                <span className="text-lg font-bold text-emerald-600 font-mono">100%</span>
-                <span className="text-[11px] text-[#60788C] block mt-0.5">مشاركة</span>
-              </div>
-            </div>
+                {/* Next Stage Card */}
+                <div className="p-5 rounded-2xl bg-[#F4F9FD] border border-[#C9ECFF] text-right space-y-2">
+                  <div className="flex items-center justify-between text-xs text-[#60788C]">
+                    <span className="font-bold text-[#2F8FD8] bg-white px-2 py-0.5 rounded border border-[#E2EEF8]">
+                      المرحلة {(room.currentSessionStageIndex || 0) + 2} من {room.session.stages.length}
+                    </span>
+                    <span className="font-mono">{nextStage.durationMinutes} دقائق</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-[#17324D]">
+                    {nextStage.titleAr}
+                  </h3>
+                  <p className="text-xs text-[#60788C] leading-relaxed">
+                    {nextStage.subtitleAr || nextStage.activity.descriptionAr}
+                  </p>
+                  <div className="text-[11px] text-[#17324D] bg-white p-2 rounded-lg border border-[#E2EEF8]">
+                    <strong>💡 توجيه الميسر: </strong>
+                    <span>{nextStage.facilitatorTipAr}</span>
+                  </div>
+                </div>
 
-            {/* Action Buttons: Dominant Primary CTA */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <button
-                onClick={handleLaunchAnotherSpark}
-                className="w-full sm:w-auto bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-6 py-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs"
-              >
-                <Dice5 className="w-4 h-4" />
-                <span>شرارة ثانية</span>
-              </button>
+                {/* Transition Action CTA */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    onClick={() => roomManager.nextSessionStage(roomCode)}
+                    className="w-full sm:w-auto bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-8 py-3.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    <span>الانتقال للنشاط التالي ({nextStage.titleAr})</span>
+                    <ChevronRight className="w-4 h-4 rotate-180" />
+                  </button>
+                </div>
+              </div>
+            ) : room.session && !nextStage ? (
+              /* Complete Full Session Celebration & Report Action */
+              <div className="space-y-4">
+                <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
+                  انتهت الجلسة بنجاح ✨
+                </h2>
+                <p className="text-xs sm:text-sm text-[#60788C]">
+                  أنجزتم جميع محطات جلسة &quot;{room.session.titleAr}&quot; بتفاعل ومشاركة ممتازة!
+                </p>
 
-              <Link
-                href="/activities"
-                className="w-full sm:w-auto px-5 py-3 rounded-xl border border-[#E2EEF8] bg-white hover:bg-[#F4F9FD] text-[#60788C] hover:text-[#17324D] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
-              >
-                <span>العودة للأنشطة</span>
-              </Link>
-            </div>
+                {/* Session Stats */}
+                <div className="grid grid-cols-3 gap-3 my-4 py-3 border-y border-[#E2EEF8] text-center">
+                  <div className="p-3 rounded-xl bg-[#F4F9FD]">
+                    <span className="text-lg font-bold text-[#17324D] font-mono">{room.players.length}</span>
+                    <span className="text-[11px] text-[#60788C] block mt-0.5">مشاركاً</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#F4F9FD]">
+                    <span className="text-lg font-bold text-[#2F8FD8] font-mono">
+                      {room.session.stages.length}
+                    </span>
+                    <span className="text-[11px] text-[#60788C] block mt-0.5">أنشطة مكتملة</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#F4F9FD]">
+                    <span className="text-lg font-bold text-emerald-600 font-mono">100%</span>
+                    <span className="text-[11px] text-[#60788C] block mt-0.5">إنجاز الخطة</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      const rep = roomManager.finishSession(roomCode);
+                      router.push(`/sessions/report/${rep.id}`);
+                    }}
+                    className="w-full sm:w-auto bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-6 py-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>عرض تقرير الجلسة الرسمي 📄</span>
+                  </button>
+
+                  <Link
+                    href="/sessions"
+                    className="w-full sm:w-auto px-5 py-3 rounded-xl border border-[#E2EEF8] bg-white hover:bg-[#F4F9FD] text-[#60788C] hover:text-[#17324D] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <span>جلسة جديدة</span>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              /* Non-session single activity completion with Smart Next Recommendation */
+              <div className="space-y-4">
+                <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
+                  المجموعة الآن جاهزة للخطوة التالية.
+                </h2>
+                <p className="text-xs sm:text-sm text-[#60788C]">
+                  طاقة المجموعة الآن مرتفعة ومنسجمة بعد إنهاء &quot;{activity.titleAr}&quot;.
+                </p>
+
+                {/* Smart Recommendation Card */}
+                <div className="p-5 rounded-2xl bg-[#F4F9FD] border border-[#C9ECFF] text-right space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-[#2F8FD8] bg-white px-2.5 py-0.5 rounded border border-[#E2EEF8]">
+                      ⚡ نقترح الآن: {smartRecommendation.titleAr}
+                    </span>
+                    <span className="font-mono text-[#60788C]">{smartRecommendation.activity.duration} دقائق</span>
+                  </div>
+                  <h4 className="text-base font-bold text-[#17324D]">
+                    {smartRecommendation.activity.titleAr}
+                  </h4>
+                  <p className="text-xs text-[#60788C] leading-relaxed">
+                    {smartRecommendation.reasonAr}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      roomManager.resetRoom(roomCode);
+                      window.location.href = `/host/${roomCode}?act=${smartRecommendation.activity.slug}`;
+                    }}
+                    className="w-full sm:w-auto bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-6 py-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>بدء النشاط المقترح ({smartRecommendation.activity.titleAr})</span>
+                  </button>
+
+                  <button
+                    onClick={handleLaunchAnotherSpark}
+                    className="w-full sm:w-auto px-5 py-3 rounded-xl border border-[#E2EEF8] bg-white hover:bg-[#F4F9FD] text-[#60788C] hover:text-[#17324D] text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Dice5 className="w-4 h-4" />
+                    <span>نشاط عشوائي</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
       </main>
+
+      {/* TIME RESCUE MODAL */}
+      {timeRescueModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-[#E2EEF8] shadow-lg animate-scale-in space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <Hourglass className="w-3.5 h-3.5" />
+                <span>اختصار الوقت الذكي (Time Rescue)</span>
+              </span>
+              <button
+                onClick={() => setTimeRescueModalOpen(false)}
+                className="text-[#60788C] text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-[#17324D]">
+                كم من الوقت بقي معك بالضبط؟
+              </h3>
+              <p className="text-xs text-[#60788C] mt-1 leading-relaxed">
+                سيقوم محرك SPARK بضغط الجولات والأسئلة تلقائياً دون إفساد تجربة المجموعة.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5 pt-1">
+              <button
+                onClick={() => {
+                  roomManager.applyTimeRescue(roomCode, 3);
+                  setTimeRescueModalOpen(false);
+                }}
+                className="p-3 rounded-xl border border-[#E2EEF8] hover:border-[#2F8FD8] hover:bg-[#EAF7FF] text-center transition-all group"
+              >
+                <span className="text-lg font-black font-mono text-[#17324D] group-hover:text-[#2F8FD8] block">3 دقائق</span>
+                <span className="text-[10px] text-[#60788C] block mt-0.5">جولتان سريعتا</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  roomManager.applyTimeRescue(roomCode, 8);
+                  setTimeRescueModalOpen(false);
+                }}
+                className="p-3 rounded-xl border border-[#E2EEF8] hover:border-[#2F8FD8] hover:bg-[#EAF7FF] text-center transition-all group"
+              >
+                <span className="text-lg font-black font-mono text-[#17324D] group-hover:text-[#2F8FD8] block">8 دقائق</span>
+                <span className="text-[10px] text-[#60788C] block mt-0.5">3 جولات متوازنة</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  roomManager.applyTimeRescue(roomCode, 12);
+                  setTimeRescueModalOpen(false);
+                }}
+                className="p-3 rounded-xl border border-[#E2EEF8] hover:border-[#2F8FD8] hover:bg-[#EAF7FF] text-center transition-all group"
+              >
+                <span className="text-lg font-black font-mono text-[#17324D] group-hover:text-[#2F8FD8] block">12 دقيقة</span>
+                <span className="text-[10px] text-[#60788C] block mt-0.5">تقليص طفيف</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESCUE INTERVENTION MODAL */}
+      {rescueModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-[#C9ECFF] shadow-lg animate-scale-in space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1 rounded-full flex items-center gap-1.5">
+                <LifeBuoy className="w-3.5 h-3.5" />
+                <span>تدخل إنقاذ طاقة فوري (Rescue Mode)</span>
+              </span>
+              <button
+                onClick={() => setRescueModalOpen(false)}
+                className="text-[#60788C] text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-[#17324D]">
+                القاعة تشعر بالفتور؟ SPARK يتدخل بنشاط حركي!
+              </h3>
+              <p className="text-xs text-[#60788C] mt-1 leading-relaxed">
+                {rescueIntervention.reasonAr}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-[#17324D]">{rescueIntervention.titleAr}</span>
+                <span className="text-xs font-bold text-[#2F8FD8] bg-[#EAF7FF] px-2 py-0.5 rounded">
+                  {rescueIntervention.durationMinutes} دقائق • بدون تحضير
+                </span>
+              </div>
+              <p className="text-xs text-[#60788C]">{rescueIntervention.taglineAr}</p>
+              <div className="text-[11px] text-[#17324D] bg-white p-2 rounded border border-[#E2EEF8]">
+                <strong>💡 نصيحة الميسر: </strong>
+                <span>{rescueIntervention.facilitatorTipAr}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setRescueModalOpen(false);
+                  roomManager.applyRescueActivity(roomCode, rescueIntervention.activity.slug);
+                }}
+                className="flex-1 bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-xs py-3 rounded-xl shadow-xs text-center"
+              >
+                ابدأ نشاط الإنقاذ الآن ⚡
+              </button>
+              <button
+                onClick={() => setRescueModalOpen(false)}
+                className="px-4 py-3 rounded-xl border border-[#E2EEF8] text-[#60788C] text-xs font-bold hover:bg-[#F4F9FD]"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

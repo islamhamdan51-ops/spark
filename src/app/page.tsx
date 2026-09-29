@@ -18,26 +18,30 @@ export default function HomePage() {
   const [randomModalOpen, setRandomModalOpen] = useState(false);
   const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
 
-  // The 10 golden intents
+  // The 13 core facilitator goals (Requirement 02)
   const INTENTS = [
     { id: "icebreaker", label: "تعارف", icon: "🤝" },
-    { id: "laughter", label: "ضحك", icon: "😂" },
-    { id: "energizer", label: "طاقة", icon: "⚡" },
-    { id: "thinking", label: "تفكير", icon: "🧠" },
-    { id: "competition", label: "منافسة", icon: "🏆" },
-    { id: "creativity", label: "إبداع", icon: "🎨" },
-    { id: "discussion", label: "نقاش", icon: "💬" },
-    { id: "movement", label: "حركة", icon: "🏃" },
-    { id: "knowledge", label: "معرفة", icon: "📖" },
-    { id: "faith", label: "إيمان وقيم", icon: "🌙" },
+    { id: "cooperation", label: "بناء فريق", icon: "👥" },
+    { id: "energizer", label: "رفع طاقة", icon: "⚡" },
+    { id: "thinking", label: "تفكير وبديهة", icon: "🧠" },
+    { id: "competition", label: "منافسة ودية", icon: "🏆" },
+    { id: "discussion", label: "حوار ونقاش", icon: "💬" },
+    { id: "laughter", label: "ضحك ومرح", icon: "😂" },
+    { id: "faith", label: "قرآن وإيمان", icon: "🌙" },
+    { id: "arabic", label: "لغة وبيان", icon: "🗣️" },
+    { id: "values", label: "قيم وتأمل", icon: "🌱" },
+    { id: "movement", label: "حركة وتنشيط", icon: "🏃" },
+    { id: "creativity", label: "إبداع وتخيل", icon: "🎨" },
   ];
 
   const displayedActivities = selectedIntent
     ? ACTIVITIES.filter((a) => {
         if (selectedIntent === "faith") return a.faithContent || a.category === "ISLAMIC" || a.goal === "faith";
-        if (selectedIntent === "knowledge") return a.educationContent || a.languageContent || a.category === "ARABIC" || a.category === "GENERAL_KNOWLEDGE";
+        if (selectedIntent === "arabic") return a.languageContent || a.category === "ARABIC";
+        if (selectedIntent === "values") return a.category === "VALUES" || a.category === "REFLECTION";
         if (selectedIntent === "movement") return a.requiresMovement || !a.requiresPhone;
         if (selectedIntent === "thinking") return a.category === "TRIVIA" || a.tags?.includes("thinking") || a.tags?.includes("quiz");
+        if (selectedIntent === "cooperation") return a.category === "TEAM" || a.cooperative;
         return a.goal === selectedIntent || a.category?.toLowerCase().includes(selectedIntent);
       }).slice(0, 6)
     : ACTIVITIES.filter((a) => a.isPlayable).slice(0, 6);
@@ -57,29 +61,29 @@ export default function HomePage() {
             {/* Harmonized Brand Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] text-xs font-bold mb-6 shadow-2xs">
               <Sparkles className="w-3.5 h-3.5 text-[#2F8FD8]" />
-              <span>منصة شرارة • أنشطة وتفاعل فوري</span>
+              <span>محرك تيسير الجلسات • SPARK Session Platform</span>
             </div>
 
             {/* Main Headline with balanced typography and accent */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-extrabold text-[#17324D] leading-[1.25] tracking-tight max-w-2xl sm:max-w-3xl mx-auto [text-wrap:balance]">
-              ما تعرفش شنو تدير{" "}
-              <span className="text-[#2F8FD8]">مع المجموعة؟</span>
+              لا تحتاج مجرد لعبة..{" "}
+              <span className="text-[#2F8FD8]">تحتاج جلسة ناجحة!</span>
             </h1>
 
             {/* Supporting Subtitle */}
             <p className="text-base sm:text-lg text-[#60788C] max-w-xl mx-auto mt-4 leading-relaxed font-medium [text-wrap:balance]">
-              شرارة تختار لك النشاط المناسب وتبدأه مع مجموعتك خلال دقائق.
+              شرارة تساعدك كميسر على قيادة مجموعتك من كسر الجمود وشحن الطاقة إلى النقاش والختام المؤثر.
             </p>
 
             {/* Harmonized, Symmetrical CTAs */}
             <div className="flex flex-wrap items-center justify-center gap-3.5 pt-8">
-              <button
-                onClick={() => setWizardOpen(true)}
-                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-[0.98] transition-all px-7 py-3.5 rounded-xl text-white font-bold text-base shadow-sm hover:shadow-md inline-flex items-center justify-center gap-2 min-w-[155px]"
+              <Link
+                href="/sessions"
+                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-[0.98] transition-all px-7 py-3.5 rounded-xl text-white font-bold text-base shadow-sm hover:shadow-md inline-flex items-center justify-center gap-2 min-w-[165px]"
               >
                 <Sparkles className="w-4 h-4 text-white" />
-                <span>ابدأ الآن</span>
-              </button>
+                <span>صمم جلستك الآن</span>
+              </Link>
 
               <Link
                 href="/demo"
@@ -121,29 +125,29 @@ export default function HomePage() {
         <section className="py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#17324D]">
-              ماذا تحتاج لمجموعتك اليوم؟
+              ماذا تريد أن يحدث في مجموعتك؟
             </h2>
             <p className="text-sm text-[#60788C] mt-1 font-medium">
-              اختر الهدف، وستظهر لك الأنشطة المصممة له بدقة:
+              حدد هدفك، ومحرك SPARK يرشح لك الأنشطة والجلسات المناسبة فوراً:
             </p>
           </div>
 
-          {/* Clean 10 Intent Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {/* Clean 12 Intent Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {INTENTS.map((intent) => {
               const isActive = selectedIntent === intent.id;
               return (
                 <button
                   key={intent.id}
                   onClick={() => setSelectedIntent(isActive ? null : intent.id)}
-                  className={`p-4 rounded-xl text-center transition-all flex flex-col items-center justify-center gap-2 border ${
+                  className={`p-3.5 rounded-xl text-center transition-all flex flex-col items-center justify-center gap-1.5 border ${
                     isActive
                       ? "bg-[#2F8FD8] text-white border-[#2F8FD8] shadow-xs"
                       : "bg-white border-[#E2EEF8] text-[#17324D] hover:border-[#A9DFFF] hover:bg-[#F4F9FD]"
                   }`}
                 >
-                  <span className="text-2xl">{intent.icon}</span>
-                  <span className="text-sm font-bold">{intent.label}</span>
+                  <span className="text-xl">{intent.icon}</span>
+                  <span className="text-xs font-bold">{intent.label}</span>
                 </button>
               );
             })}

@@ -4,6 +4,7 @@ import { ADULT_ACTIVITIES } from "./activities/adult-activities";
 import { ISLAMIC_ACTIVITIES } from "./activities/islamic-activities";
 import { ARABIC_ACTIVITIES } from "./activities/arabic-activities";
 import { KIDS_ACTIVITIES } from "./activities/kids-activities";
+import { CLOSING_ACTIVITIES } from "./closing-activities";
 
 const BASE_ACTIVITIES: Activity[] = [
   // ==========================================
@@ -2649,6 +2650,7 @@ const ALL_RAW_ACTIVITIES: Activity[] = [
   ...ISLAMIC_ACTIVITIES,
   ...ARABIC_ACTIVITIES,
   ...KIDS_ACTIVITIES,
+  ...CLOSING_ACTIVITIES,
   ...BASE_ACTIVITIES,
 ];
 

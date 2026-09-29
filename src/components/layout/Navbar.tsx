@@ -54,6 +54,12 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
             الأنشطة
           </Link>
           <Link
+            href="/sessions"
+            className="hover:text-[#17324D] transition-colors font-bold text-[#2F8FD8]"
+          >
+            الجلسات
+          </Link>
+          <Link
             href="/activities?audience=adults"
             className="hover:text-[#17324D] transition-colors"
           >
@@ -144,6 +150,13 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
               className="p-2 rounded-lg hover:bg-[#F4F9FD] transition-colors"
             >
               الأنشطة
+            </Link>
+            <Link
+              href="/sessions"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:bg-[#F4F9FD] transition-colors font-bold text-[#2F8FD8]"
+            >
+              الجلسات
             </Link>
             <Link
               href="/activities?audience=adults"
