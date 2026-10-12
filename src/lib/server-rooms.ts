@@ -101,18 +101,43 @@ export function addPlayerToServerRoom(
   let room = getServerRoom(code);
 
   if (!room) {
-    return {
-      success: false,
-      error: "الغرفة غير موجودة أو لم تبدأ بعد. تأكد من إطلاق الغرفة أولاً من شاشة المضيف.",
-    };
+    if (/^\d{6}$/.test(code)) {
+      room = {
+        code,
+        activityId: "act-this-or-that",
+        activitySlug: "this-or-that",
+        status: "LOBBY",
+        currentRoundIndex: 0,
+        roundTimer: 15,
+        players: [],
+        answers: [],
+        teams: [],
+        isTeamMode: false,
+        isDemo: false,
+        createdAt: Date.now(),
+        lastUpdatedAt: Date.now(),
+        soundEnabled: true,
+        version: 1,
+      };
+      saveServerRoom(room);
+    } else {
+      return {
+        success: false,
+        error: "الغرفة غير موجودة أو لم تبدأ بعد. تأكد من إطلاق الغرفة أولاً من شاشة المضيف.",
+      };
+    }
   }
 
-  // Check if player with same nickname already exists
+  // Check if player with same nickname already exists (reconnection / re-entry)
   const existingPlayer = room.players.find(
     (p) => p.nickname.toLowerCase() === nickname.trim().toLowerCase()
   );
 
   if (existingPlayer) {
+    if (avatar && avatar !== existingPlayer.avatar) {
+      existingPlayer.avatar = avatar;
+      saveServerRoom(room);
+    }
     return {
       success: true,
       player: existingPlayer,

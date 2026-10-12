@@ -77,13 +77,12 @@ class RoomManager {
         current.answers.length > 0
       ) {
         const mergedAnswers = [...(incoming.answers || [])];
-        const currentSuffix = `-round-${(incoming.currentRoundIndex || 0) + 1}`;
+        const activeRoundId = incoming.currentRound?.id;
         for (const localAns of current.answers) {
           const exists = mergedAnswers.some(
             (inAns) =>
               inAns.playerId === localAns.playerId &&
-              (inAns.roundId === localAns.roundId ||
-                (inAns.roundId.endsWith(currentSuffix) && localAns.roundId.endsWith(currentSuffix)))
+              (inAns.roundId === localAns.roundId || (activeRoundId && inAns.roundId === activeRoundId && localAns.roundId === activeRoundId))
           );
           if (!exists) {
             mergedAnswers.push(localAns);
@@ -222,6 +221,8 @@ class RoomManager {
       return newRoom;
     }
 
+    // Always push existing room to server so server is guaranteed to have it
+    this.persistAndBroadcast(code, existing);
     return existing;
   }
 
@@ -346,31 +347,36 @@ class RoomManager {
       return { success: false, error: "الرجاء إدخال اسم مستعار" };
     }
 
-    // 1. Try Server API join first (vital for mobile participants joining Vercel host!)
+    // 1. Try Server API join first with automatic retry (up to 3 attempts)
     if (typeof window !== "undefined") {
-      try {
-        const res = await fetch(`/api/rooms/${code}/players`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nickname: trimmed, avatar: avatar || "⚡" }),
-        });
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await fetch(`/api/rooms/${code}/players`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nickname: trimmed, avatar: avatar || "⚡" }),
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.player) {
-            if (data.room) {
-              this.rooms.set(code, data.room);
-              this.notifyListeners(code, data.room);
-              try {
-                localStorage.setItem(`spark_room_state_${code}`, JSON.stringify(data.room));
-              } catch {}
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.player) {
+              if (data.room) {
+                this.rooms.set(code, data.room);
+                this.notifyListeners(code, data.room);
+                try {
+                  localStorage.setItem(`spark_room_state_${code}`, JSON.stringify(data.room));
+                } catch {}
+              }
+              sounds.playJoin();
+              return { success: true, player: data.player };
             }
-            sounds.playJoin();
-            return { success: true, player: data.player };
           }
+        } catch (err) {
+          console.warn(`Server API addPlayer attempt ${attempt} warning:`, err);
         }
-      } catch (err) {
-        console.warn("Server API addPlayer warning, falling back to local/firebase", err);
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
       }
     }
 
@@ -402,9 +408,13 @@ class RoomManager {
       };
     }
 
-    const exists = room.players.some((p) => p.nickname.toLowerCase() === trimmed.toLowerCase());
-    if (exists) {
-      return { success: false, error: "هذا الاسم مستخدم بالفعل داخل الغرفة، اختر اسماً آخر!" };
+    // Check if player with same nickname already exists (reconnection / re-entry)
+    const existingPlayer = room.players.find(
+      (p) => p.nickname.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existingPlayer) {
+      sounds.playJoin();
+      return { success: true, player: existingPlayer };
     }
 
     const newPlayer: Player = {
@@ -457,7 +467,7 @@ class RoomManager {
     const room = this.rooms.get(code);
     if (!room) return;
 
-    const act = ACTIVITIES.find((a) => a.slug === room.activitySlug) || ACTIVITIES[0];
+    const act = getActivityBySlug(room.activitySlug) || ACTIVITIES.find((a) => a.slug === room.activitySlug) || ACTIVITIES[0];
     const round = act.rounds?.[roundIndex];
     const timeLimit = round?.timeLimit || 15;
 
@@ -466,11 +476,12 @@ class RoomManager {
       ...room,
       status: "PLAYING_ROUND",
       currentRoundIndex: roundIndex,
+      currentRound: round,
       roundTimer: timeLimit,
       roundStartTime: Date.now(),
       lastUpdatedAt: Date.now(),
       version: (room.version || 0) + 1,
-      answers: room.answers.filter((a) => a.roundId !== round?.id),
+      answers: [], // Fresh round: empty answers array so previous round never leaks
     };
     this.persistAndBroadcast(code, updated);
 
@@ -488,17 +499,11 @@ class RoomManager {
 
     if (room) {
       // Prevent duplicate submission for same round
-      const currentSuffix = `-round-${(room.currentRoundIndex || 0) + 1}`;
+      const activeRoundId = room.currentRound?.id || answer.roundId;
       const existingIdx = room.answers.findIndex((a) => {
         if (a.playerId !== answer.playerId) return false;
         if (a.roundId === answer.roundId) return true;
-        if (a.roundId.endsWith(currentSuffix) && answer.roundId.endsWith(currentSuffix)) return true;
-        if (
-          a.roundId === `round-${(room.currentRoundIndex || 0) + 1}` ||
-          answer.roundId === `round-${(room.currentRoundIndex || 0) + 1}`
-        ) {
-          return true;
-        }
+        if (activeRoundId && a.roundId === activeRoundId) return true;
         return false;
       });
 
@@ -668,15 +673,18 @@ class RoomManager {
     const nextStageIdx = (room.currentSessionStageIndex || 0) + 1;
     if (nextStageIdx < room.session.stages.length) {
       const nextStage = room.session.stages[nextStageIdx];
+      const act = getActivityBySlug(nextStage.activity.slug) || nextStage.activity || ACTIVITIES[0];
+      const firstRound = act.rounds?.[0];
       sounds.playRoundStart();
       const updated: RoomState = {
         ...room,
         currentSessionStageIndex: nextStageIdx,
-        activityId: nextStage.activity.id,
-        activitySlug: nextStage.activity.slug,
+        activityId: act.id,
+        activitySlug: act.slug,
         status: "PLAYING_ROUND",
         currentRoundIndex: 0,
-        roundTimer: nextStage.activity.rounds?.[0]?.timeLimit || 20,
+        currentRound: firstRound,
+        roundTimer: firstRound?.timeLimit || 20,
         roundStartTime: Date.now(),
         answers: [],
         timeRescueActive: false,

@@ -10,10 +10,35 @@ export function generateRoomCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export const AVATAR_OPTIONS = [
-  "⚡", "🔥", "🚀", "🌟", "🦁", "🦊", "🐼", "🦄", 
-  "🎯", "🎲", "💎", "🍕", "🎸", "🏆", "🎨", "🌊"
+export const AVATAR_CATEGORIES = [
+  {
+    id: "energy",
+    nameAr: "طاقة وفضاء ⚡",
+    avatars: ["⚡", "🔥", "🚀", "🌟", "🪐", "☄️", "☀️", "💎", "💡", "🌈", "🔮", "🌊"],
+  },
+  {
+    id: "animals",
+    nameAr: "حيوانات وأبطال 🦁",
+    avatars: ["🦁", "🐯", "🦊", "🐼", "🐨", "🦄", "🦅", "🦉", "🐬", "🐙", "🦋", "🐝"],
+  },
+  {
+    id: "games",
+    nameAr: "ألعاب ومنافسة 🎯",
+    avatars: ["🎯", "🎲", "🏆", "🥇", "⚽", "🏀", "🎮", "🛹", "🎸", "🎨", "🎭", "🎪"],
+  },
+  {
+    id: "food",
+    nameAr: "طعام ومرح 🍕",
+    avatars: ["🍕", "🍔", "🌮", "🍣", "🍦", "🍩", "🍓", "🍉", "☕", "🍿", "🥑", "🍪"],
+  },
+  {
+    id: "symbols",
+    nameAr: "رموز وطبيعة 👑",
+    avatars: ["👑", "🌴", "🌸", "🍁", "🍀", "⚓", "🛸", "🧭", "🛡️", "⚔️", "✨", "💫"],
+  },
 ];
+
+export const AVATAR_OPTIONS = AVATAR_CATEGORIES.flatMap((c) => c.avatars);
 
 export function getRandomAvatar(): string {
   return AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)];

@@ -18,6 +18,41 @@ import { resolveJoinUrl } from "@/lib/get-join-url";
 import { sounds } from "@/lib/sound";
 import { getRescueIntervention, getNextSmartActivityRecommendation } from "@/lib/session-engine";
 
+const HOST_OPTION_THEMES = [
+  {
+    border: "border-rose-400 hover:border-rose-500",
+    bg: "bg-gradient-to-br from-rose-50 via-rose-100/70 to-rose-200/50",
+    text: "text-rose-950",
+    badge: "bg-rose-500 text-white shadow-rose-200",
+    barColor: "bg-rose-500",
+    label: "١",
+  },
+  {
+    border: "border-blue-400 hover:border-blue-500",
+    bg: "bg-gradient-to-br from-blue-50 via-blue-100/70 to-blue-200/50",
+    text: "text-blue-950",
+    badge: "bg-blue-600 text-white shadow-blue-200",
+    barColor: "bg-blue-600",
+    label: "٢",
+  },
+  {
+    border: "border-amber-400 hover:border-amber-500",
+    bg: "bg-gradient-to-br from-amber-50 via-amber-100/70 to-amber-200/50",
+    text: "text-amber-950",
+    badge: "bg-amber-500 text-white shadow-amber-200",
+    barColor: "bg-amber-500",
+    label: "٣",
+  },
+  {
+    border: "border-emerald-400 hover:border-emerald-500",
+    bg: "bg-gradient-to-br from-emerald-50 via-emerald-100/70 to-emerald-200/50",
+    text: "text-emerald-950",
+    badge: "bg-emerald-600 text-white shadow-emerald-200",
+    barColor: "bg-emerald-600",
+    label: "٤",
+  },
+];
+
 export default function HostRoomPage() {
   const params = useParams();
   const router = useRouter();
@@ -128,28 +163,19 @@ export default function HostRoomPage() {
   };
 
   const rounds = (activity?.rounds && activity.rounds.length > 0) ? activity.rounds : [fallbackRound];
-  const currentRound = (room && rounds[room.currentRoundIndex]) || rounds[0] || fallbackRound;
+  const currentRound = room?.currentRound || (room && rounds[room.currentRoundIndex]) || rounds[0] || fallbackRound;
 
-  // Flexible match so any format of round ID (or index suffix) is correctly recognized and displayed
+  // Strict match for current active round ID
   const isAnswerForCurrentRound = (a: PlayerAnswer) => {
     if (!a || !currentRound) return false;
-    if (a.roundId === currentRound.id) return true;
-    const suffix = `-round-${(room?.currentRoundIndex || 0) + 1}`;
-    if (a.roundId.endsWith(suffix) || currentRound.id.endsWith(suffix)) return true;
-    if (
-      a.roundId === `round-${(room?.currentRoundIndex || 0) + 1}` ||
-      currentRound.id === `round-${(room?.currentRoundIndex || 0) + 1}`
-    ) {
-      return true;
-    }
-    return false;
+    return a.roundId === currentRound.id;
   };
 
   const roundAnswers = room?.answers?.filter(isAnswerForCurrentRound) || [];
 
   const [secondsLeft, setSecondsLeft] = useState<number>(15);
 
-  // Synchronized Round Timer effect using roundStartTime
+  // Synchronized Round Timer effect: strictly runs down to 0 before showing results
   useEffect(() => {
     if (room?.status === "PLAYING_ROUND") {
       const updateTimer = () => {
@@ -177,18 +203,6 @@ export default function HostRoomPage() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [room?.status, room?.roundStartTime, room?.roundTimer, currentRound?.timeLimit, roomCode]);
-
-  // Clean transition when all connected players have answered
-  useEffect(() => {
-    if (room?.status !== "PLAYING_ROUND" || !currentRound || room.players.length === 0) return;
-    const answeredCount = room.answers?.filter(isAnswerForCurrentRound).length || 0;
-    if (answeredCount >= room.players.length) {
-      const timeout = setTimeout(() => {
-        roomManager.showRoundResults(roomCode);
-      }, 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [room?.status, room?.answers?.length, room?.players?.length, currentRound?.id, roomCode]);
 
   // Stopwatch for non-phone facilitation activities
   useEffect(() => {
@@ -293,11 +307,11 @@ export default function HostRoomPage() {
   return (
     <div
       className={`min-h-screen ${
-        isFullscreen ? "bg-white p-4 sm:p-6" : "bg-[#F4F9FD] p-4 sm:p-6"
+        isFullscreen ? "bg-white p-4 sm:p-6 lg:p-8" : "bg-[#F4F9FD] p-4 sm:p-6 lg:p-8"
       } text-[#17324D] flex flex-col font-arabic transition-colors duration-200`}
     >
-      {/* 22 — Top Host Bar */}
-      <header className="max-w-5xl mx-auto w-full bg-white/95 backdrop-blur-md border border-[#E2EEF8] rounded-2xl px-5 py-3 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+      {/* Top Host Bar */}
+      <header className="max-w-6xl 2xl:max-w-7xl mx-auto w-full bg-white/95 backdrop-blur-md border border-[#E2EEF8] rounded-2xl px-6 py-3.5 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
         <div className="flex items-center gap-3">
           <Link
             href="/activities"
@@ -318,13 +332,13 @@ export default function HostRoomPage() {
         {/* Center: Prominent Room Code */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#60788C] font-mono">الرمز:</span>
-          <span className="text-lg font-black font-mono tracking-widest text-[#17324D] bg-[#F4F9FD] px-3 py-1 rounded-lg border border-[#E2EEF8]">
+          <span className="text-xl font-black font-mono tracking-widest text-[#17324D] bg-[#F4F9FD] px-3.5 py-1 rounded-xl border border-[#E2EEF8]">
             {roomCode}
           </span>
           <button
             onClick={handleCopyLink}
             title="نسخ رابط الغرفة"
-            className="p-1.5 rounded-lg border border-[#E2EEF8] hover:bg-[#F4F9FD] text-[#60788C] text-xs transition-colors"
+            className="p-1.5 rounded-lg border border-[#E2EEF8] hover:bg-[#F4F9FD] text-[#60788C] text-xs transition-colors cursor-pointer"
           >
             {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
@@ -335,7 +349,7 @@ export default function HostRoomPage() {
           {/* Facilitator Mode toggle */}
           <button
             onClick={() => setFacilitatorModeOpen(!facilitatorModeOpen)}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
               facilitatorModeOpen
                 ? "bg-[#EAF7FF] text-[#2F8FD8] border border-[#C9ECFF]"
                 : "bg-[#F4F9FD] text-[#60788C] hover:text-[#17324D]"
@@ -348,7 +362,7 @@ export default function HostRoomPage() {
             onClick={handleToggleSound}
             aria-label={isMuted ? "تشغيل الصوت" : "كتم الصوت"}
             title={isMuted ? "تشغيل الصوت (M)" : "كتم الصوت (M)"}
-            className="p-2 rounded-lg text-[#60788C] hover:text-[#17324D] hover:bg-[#F4F9FD] transition-colors"
+            className="p-2 rounded-lg text-[#60788C] hover:text-[#17324D] hover:bg-[#F4F9FD] transition-colors cursor-pointer"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-[#A0AEC0]" /> : <Volume2 className="w-4 h-4 text-[#2F8FD8]" />}
           </button>
@@ -356,7 +370,7 @@ export default function HostRoomPage() {
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             title="وضع العرض التقديمي للشاشات الكبيرة (F)"
-            className="p-2 rounded-lg bg-[#F4F9FD] hover:bg-[#EAF7FF] text-[#17324D] text-xs font-bold flex items-center gap-1 transition-colors"
+            className="p-2 rounded-lg bg-[#F4F9FD] hover:bg-[#EAF7FF] text-[#17324D] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             <span className="hidden md:inline">{isFullscreen ? "تصغير" : "شاشة كاملة"}</span>
@@ -365,7 +379,7 @@ export default function HostRoomPage() {
       </header>
 
       {/* SESSION ENGINE RIBBON & FACILITATOR BAR */}
-      <section className="max-w-5xl mx-auto w-full mb-6 space-y-3">
+      <section className="max-w-6xl 2xl:max-w-7xl mx-auto w-full mb-6 space-y-3">
         {/* Active Session Ribbon */}
         {room.session && (
           <div className="bg-white rounded-2xl border border-[#C9ECFF] p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -504,71 +518,71 @@ export default function HostRoomPage() {
       </section>
 
       {/* HOST MAIN CONTENT STAGE */}
-      <main className="max-w-5xl mx-auto w-full flex-1 flex flex-col justify-center items-center">
+      <main className="max-w-6xl 2xl:max-w-7xl mx-auto w-full flex-1 flex flex-col justify-center items-center">
         
-        {/* 25 — LOBBY VIEW */}
+        {/* LOBBY VIEW */}
         {room.status === "LOBBY" && (
-          <div className="w-full max-w-3xl bg-white rounded-2xl p-6 sm:p-10 border border-[#E2EEF8] shadow-xs relative overflow-hidden animate-scale-in">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div className="w-full max-w-5xl 2xl:max-w-6xl bg-white rounded-3xl p-6 sm:p-10 lg:p-12 border border-[#E2EEF8] shadow-sm relative overflow-hidden animate-scale-in">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
               
-              {/* 26 — QR Visual Design */}
-              <div className="md:col-span-5 text-center p-6 rounded-2xl bg-[#F4F9FD] border border-[#E2EEF8] space-y-3">
-                <span className="text-xs font-bold text-[#2F8FD8] block">
-                  امسح الرمز للانضمام فوراً
+              {/* QR Visual Design */}
+              <div className="lg:col-span-5 text-center p-6 sm:p-8 rounded-3xl bg-[#F4F9FD] border-2 border-[#E2EEF8] space-y-4">
+                <span className="text-sm font-black text-[#2F8FD8] block">
+                  امسح الرمز بكاميرا الجوال للانضمام فوراً 📲
                 </span>
 
                 <div className="flex justify-center py-2">
-                  <div className="p-3 bg-white rounded-xl border border-[#E2EEF8] shadow-2xs">
-                    <QRCodeView text={effectiveJoinUrl} size={180} />
+                  <div className="p-4 bg-white rounded-2xl border-2 border-[#E2EEF8] shadow-sm">
+                    <QRCodeView text={effectiveJoinUrl} size={isFullscreen ? 280 : 240} />
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-[#E2EEF8]">
-                  <div className="text-xs text-[#60788C] font-bold">رمز الغرفة:</div>
-                  <div className="text-3xl font-black font-mono tracking-widest text-[#17324D] mt-0.5">
+                <div className="pt-3 border-t border-[#E2EEF8]">
+                  <div className="text-xs text-[#60788C] font-black uppercase tracking-wider">رمز الغرفة المباشر:</div>
+                  <div className="text-5xl sm:text-6xl lg:text-7xl font-black font-mono tracking-widest text-[#17324D] mt-1 select-all">
                     {roomCode}
                   </div>
                 </div>
               </div>
 
               {/* Lobby Details & Player List */}
-              <div className="md:col-span-7 space-y-6 text-right">
+              <div className="lg:col-span-7 space-y-6 text-right">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-[#17324D]">
+                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#17324D] leading-tight">
                     {activity.titleAr}
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#60788C] mt-1.5 leading-relaxed">
+                  <p className="text-sm sm:text-base lg:text-lg text-[#60788C] mt-2 leading-relaxed font-medium">
                     {activity.descriptionAr}
                   </p>
                 </div>
 
                 {/* Participant Count and List */}
                 <div className="pt-4 border-t border-[#E2EEF8]">
-                  <div className="flex items-center justify-between text-xs text-[#60788C] font-bold mb-3">
-                    <span className="flex items-center gap-1.5 text-[#17324D]">
-                      <Users className="w-4 h-4 text-[#2F8FD8]" />
-                      <span>المشاركون ({room.players.length}):</span>
+                  <div className="flex items-center justify-between text-sm text-[#60788C] font-black mb-3">
+                    <span className="flex items-center gap-2 text-[#17324D]">
+                      <Users className="w-5 h-5 text-[#2F8FD8]" />
+                      <span>المشاركون المنضمون ({room.players.length}):</span>
                     </span>
                     {room.players.length === 0 ? (
-                      <span className="text-[#60788C] animate-pulse">في انتظار الانضمام...</span>
+                      <span className="text-[#2F8FD8] animate-pulse font-black">في انتظار مسح الرمز...</span>
                     ) : (
-                      <span className="text-emerald-600 font-bold">جاهزون!</span>
+                      <span className="text-emerald-600 font-black">جاهزون للانطلاق! 🚀</span>
                     )}
                   </div>
 
                   {room.players.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+                    <div className="flex flex-wrap gap-2.5 max-h-48 overflow-y-auto pr-1">
                       {room.players.map((p) => (
                         <div
                           key={p.id}
-                          className="px-3 py-1.5 rounded-lg bg-[#F4F9FD] border border-[#E2EEF8] flex items-center gap-2 text-xs font-bold text-[#17324D] animate-scale-in"
+                          className="px-3.5 py-2 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8] flex items-center gap-2 text-sm font-black text-[#17324D] animate-scale-in shadow-2xs"
                         >
-                          <span>{p.avatar}</span>
+                          <span className="text-lg">{p.avatar}</span>
                           <span>{p.nickname}</span>
                           <button
                             onClick={() => roomManager.removePlayer(roomCode, p.id)}
                             title="إزالة"
-                            className="text-[#60788C] hover:text-red-500 text-xs mr-1"
+                            className="text-[#60788C] hover:text-red-500 text-sm mr-1 cursor-pointer"
                           >
                             ×
                           </button>
@@ -576,8 +590,8 @@ export default function HostRoomPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="p-4 rounded-xl bg-[#F4F9FD] border border-dashed border-[#C9ECFF] text-center text-xs text-[#60788C]">
-                      امسح الرمز أو ادخل عبر <span className="font-mono text-[#2F8FD8] font-bold">/join</span> برمز الغرفة {roomCode}
+                    <div className="p-5 rounded-2xl bg-[#F4F9FD] border-2 border-dashed border-[#C9ECFF] text-center text-sm text-[#60788C]">
+                      امسح الرمز أو ادخل عبر <span className="font-mono text-[#2F8FD8] font-black">/join</span> برمز الغرفة <span className="font-mono text-[#17324D] font-black">{roomCode}</span>
                     </div>
                   )}
                 </div>
@@ -586,10 +600,10 @@ export default function HostRoomPage() {
                 <div className="pt-2">
                   <button
                     onClick={handleStartCountdown}
-                    className="w-full bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all py-3.5 rounded-xl text-white font-black text-base flex items-center justify-center gap-2 shadow-xs"
+                    className="w-full bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all py-4 sm:py-5 rounded-2xl text-white font-black text-xl sm:text-2xl flex items-center justify-center gap-3 shadow-md cursor-pointer"
                   >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>ابدأ (Space)</span>
+                    <Play className="w-6 h-6 fill-current" />
+                    <span>ابدأ النشاط (Space)</span>
                   </button>
                 </div>
 
@@ -601,85 +615,71 @@ export default function HostRoomPage() {
 
         {/* 2. DYNAMIC COUNTDOWN VIEW (3 -> 2 -> 1) */}
         {room.status === "COUNTDOWN" && (
-          <div className="text-center animate-scale-in py-16">
-            <div className="text-lg font-bold text-[#2F8FD8] mb-4 font-arabic">استعدوا جميعاً...</div>
+          <div className="text-center animate-scale-in py-16 sm:py-24">
+            <div className="text-2xl sm:text-3xl font-black text-[#2F8FD8] mb-6 font-arabic">استعدوا جميعاً...</div>
             <div
               key={`countdown-${countdownVal}`}
-              className="text-8xl sm:text-9xl font-black text-[#17324D] font-mono animate-scale-in select-none"
+              className="text-9xl sm:text-[13rem] 2xl:text-[16rem] font-black text-[#17324D] font-mono animate-scale-in select-none my-4"
             >
               {countdownVal}
             </div>
-            <div className="text-xs text-[#60788C] mt-6 font-medium">انظر للشاشة وأجب فوراً!</div>
+            <div className="text-base sm:text-xl text-[#60788C] mt-8 font-black">انظر للشاشة وأجب من هاتفك فوراً! ⚡</div>
           </div>
         )}
 
-        {/* 23 — ACTIVE PLAYING ROUND (Presentation Mode) */}
+        {/* 3. ACTIVE PLAYING ROUND (Big Screen Presentation Mode) */}
         {room.status === "PLAYING_ROUND" && currentRound && (
-          <div key={`host-round-view-${currentRound.id}`} className="w-full max-w-3xl space-y-6 animate-scale-in">
+          <div key={`host-round-view-${currentRound.id}`} className="w-full max-w-5xl 2xl:max-w-6xl space-y-6 animate-scale-in">
             
             {/* Header info bar */}
-            <div className="flex items-center justify-between bg-white px-6 py-3 rounded-xl border border-[#E2EEF8] shadow-2xs">
-              <span className="px-3 py-1 rounded-md bg-[#EAF7FF] text-[#2F8FD8] text-xs font-bold">
+            <div className="flex items-center justify-between bg-white px-6 sm:px-8 py-4 rounded-2xl border border-[#E2EEF8] shadow-xs">
+              <span className="px-4 py-1.5 rounded-xl bg-[#EAF7FF] text-[#2F8FD8] text-sm sm:text-base font-black">
                 الجولة {room.currentRoundIndex + 1} من {activity.rounds?.length || 1}
               </span>
 
-              {/* Timer */}
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#2F8FD8]" />
-                <span className={`text-xl font-mono font-black ${
-                  secondsLeft <= 4 ? "text-red-500 animate-pulse" : "text-[#17324D]"
+              {/* Big Timer */}
+              <div className="flex items-center gap-3">
+                <Clock className={`w-6 h-6 ${secondsLeft <= 4 ? "text-rose-600 animate-spin" : "text-[#2F8FD8]"}`} />
+                <span className={`text-2xl sm:text-4xl font-mono font-black ${
+                  secondsLeft <= 4 ? "text-rose-600 animate-pulse" : "text-[#17324D]"
                 }`}>
                   00:{secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}
                 </span>
               </div>
 
               {/* Live Answered Count */}
-              <span className="text-xs font-bold text-[#60788C]">
-                أجاب: <span className="text-[#2F8FD8] font-mono font-bold">{roundAnswers.length}</span> من <span className="font-mono">{room.players.length}</span>
+              <span className="text-sm sm:text-base font-bold text-[#60788C]">
+                أجاب: <strong className="text-[#2F8FD8] font-mono font-black text-lg sm:text-xl">{roundAnswers.length}</strong> من <strong className="font-mono text-base sm:text-lg">{room.players.length}</strong>
               </span>
             </div>
 
             {/* Prompt Stage Card */}
-            <div className="bg-white rounded-2xl p-8 sm:p-10 border border-[#E2EEF8] shadow-xs text-center space-y-3">
-              <h2 className="text-2xl sm:text-4xl font-black text-[#17324D] leading-snug">
+            <div className="bg-white rounded-3xl p-8 sm:p-12 lg:p-14 border border-[#E2EEF8] shadow-sm text-center space-y-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#17324D] leading-tight max-w-4xl mx-auto">
                 {currentRound.promptAr}
               </h2>
               {currentRound.subtitleAr && (
-                <p className="text-xs sm:text-sm text-[#60788C]">
+                <p className="text-base sm:text-xl text-[#60788C] mt-3 font-bold max-w-2xl mx-auto">
                   {currentRound.subtitleAr}
                 </p>
               )}
 
-              {/* Options Showcase */}
+              {/* Options Showcase (Big Kahoot-style cards - Individual votes strictly hidden until timer expires!) */}
               {currentRound.optionsAr && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mt-8">
                   {currentRound.optionsAr.map((opt, optIdx) => {
-                    const optAnswers = roundAnswers.filter((a) => a.answer === optIdx);
+                    const theme = HOST_OPTION_THEMES[optIdx % HOST_OPTION_THEMES.length];
                     return (
                       <div
                         key={`${currentRound.id}-opt-${optIdx}`}
-                        className="p-5 rounded-xl border border-[#E2EEF8] bg-[#F4F9FD] text-right transition-all"
+                        className={`p-6 sm:p-8 2xl:p-10 rounded-3xl border-3 ${theme.border} ${theme.bg} text-right transition-all shadow-sm flex items-center justify-between min-h-[120px] sm:min-h-[140px] 2xl:min-h-[160px] select-none`}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-base font-bold text-[#17324D]">
-                            {opt}
-                          </span>
-                          <span className="text-xs font-mono font-bold text-[#2F8FD8] bg-white px-2 py-0.5 rounded-md border border-[#E2EEF8]">
-                            {optAnswers.length} صوت
-                          </span>
-                        </div>
-
-                        {/* Avatars */}
-                        <div className="flex flex-wrap gap-1 mt-2 min-h-[24px]">
-                          {optAnswers.map((ans) => (
-                            <span
-                              key={ans.playerId}
-                              className="text-xs px-2 py-0.5 rounded-md bg-white border border-[#E2EEF8] text-[#17324D] shadow-2xs"
-                            >
-                              {ans.playerNickname}
-                            </span>
-                          ))}
-                        </div>
+                        <span className={`text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-black leading-snug pr-2 flex-1 ${theme.text}`}>
+                          {opt}
+                        </span>
+                        <span className={`w-14 h-14 sm:w-16 sm:h-16 2xl:w-20 2xl:h-20 rounded-2xl ${theme.badge} flex items-center justify-center text-2xl sm:text-3xl 2xl:text-4xl font-black font-mono shadow-md mr-4 shrink-0`}>
+                          {theme.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -688,38 +688,76 @@ export default function HostRoomPage() {
 
               {/* Word Cloud Mode */}
               {activity.type === "WORD_CLOUD" && (
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 min-h-[120px] p-6 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8]">
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3 min-h-[150px] p-8 rounded-3xl bg-[#F4F9FD] border-2 border-[#E2EEF8]">
                   {roundAnswers.map((ans, aIdx) => (
                     <span
                       key={aIdx}
-                      className="px-3.5 py-1.5 rounded-xl font-bold bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] text-sm sm:text-base shadow-2xs animate-scale-in"
+                      className="px-5 py-2.5 rounded-2xl font-black bg-[#EAF7FF] border border-[#C9ECFF] text-[#2F8FD8] text-base sm:text-xl shadow-2xs animate-scale-in"
                     >
                       {ans.answer}
                     </span>
                   ))}
                   {roundAnswers.length === 0 && (
-                    <div className="text-xs text-[#60788C]">في انتظار إرسال الكلمات من المشاركين...</div>
+                    <div className="text-sm sm:text-base text-[#60788C] font-bold">في انتظار إرسال الكلمات من المشاركين عبر الهواتف...</div>
                   )}
                 </div>
               )}
 
+              {/* Live Collective Progress (Shows who responded without revealing choices) */}
+              <div className="mt-8 bg-[#F4F9FD] rounded-2xl border border-[#E2EEF8] p-4 sm:p-5 text-right space-y-3">
+                <div className="flex items-center justify-between text-xs sm:text-sm font-black">
+                  <span className="flex items-center gap-2 text-[#17324D]">
+                    <Users className="w-4 h-4 text-[#2F8FD8]" />
+                    <span>المشاركون الذين تم استلام إجاباتهم:</span>
+                  </span>
+                  <span className="text-[#2F8FD8] font-mono">
+                    {roundAnswers.length} من {room.players.length} ({room.players.length > 0 ? Math.round((roundAnswers.length / room.players.length) * 100) : 0}%)
+                  </span>
+                </div>
+
+                <div className="h-3 w-full bg-white rounded-full overflow-hidden border border-[#E2EEF8]">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#2F8FD8] to-emerald-500 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${room.players.length > 0 ? (roundAnswers.length / room.players.length) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1 min-h-[28px]">
+                  {roundAnswers.length > 0 ? (
+                    roundAnswers.map((ans) => (
+                      <span
+                        key={ans.playerId}
+                        className="text-xs font-bold px-3 py-1 rounded-xl bg-white border border-[#E2EEF8] text-[#17324D] shadow-2xs animate-scale-in flex items-center gap-1.5"
+                      >
+                        <span>{ans.playerNickname}</span>
+                        <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-[#60788C] font-bold animate-pulse">في انتظار تسجيل الإجابات... النتيجة ستظهر أمام الجميع بعد انتهاء التوقيت.</span>
+                  )}
+                </div>
+              </div>
+
               {/* Facilitation Mode Guide if applicable */}
               {!activity.requiresPhone && (
-                <div className="mt-6 p-4 rounded-xl bg-[#F4F9FD] border border-[#E2EEF8] text-right space-y-3">
+                <div className="mt-6 p-5 rounded-2xl bg-[#F4F9FD] border border-[#E2EEF8] text-right space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#60788C]">توجيه الميسر:</span>
+                    <span className="text-sm font-bold text-[#60788C]">توجيه الميسر:</span>
                     <button
                       onClick={() => setShowSecretWord(!showSecretWord)}
-                      className="px-3 py-1 rounded-lg border border-[#E2EEF8] bg-white text-xs font-bold text-[#17324D] flex items-center gap-1.5 shadow-2xs"
+                      className="px-4 py-2 rounded-xl border border-[#E2EEF8] bg-white text-xs font-bold text-[#17324D] flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
-                      {showSecretWord ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3 text-[#2F8FD8]" />}
+                      {showSecretWord ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-[#2F8FD8]" />}
                       <span>{showSecretWord ? "إخفاء الكلمة" : "كشف الكلمة"}</span>
                     </button>
                   </div>
 
                   {showSecretWord && currentRound.secretWordAr && (
-                    <div className="p-3 rounded-lg bg-[#EAF7FF] border border-[#C9ECFF] text-center">
-                      <span className="text-xl font-black text-[#2F8FD8]">
+                    <div className="p-4 rounded-xl bg-[#EAF7FF] border border-[#C9ECFF] text-center">
+                      <span className="text-2xl font-black text-[#2F8FD8]">
                         {currentRound.secretWordAr}
                       </span>
                     </div>
@@ -728,15 +766,15 @@ export default function HostRoomPage() {
                   {/* Facilitation Stopwatch */}
                   <div className="flex items-center justify-between pt-2 border-t border-[#E2EEF8]">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#60788C]">مؤقت:</span>
-                      <span className="text-base font-mono font-bold text-[#17324D]">
+                      <span className="text-xs text-[#60788C]">مؤقت الميسر:</span>
+                      <span className="text-lg font-mono font-black text-[#17324D]">
                         {stopwatchTime} ثانية
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setStopwatchRunning(!stopwatchRunning)}
-                        className="px-3 py-1 rounded-lg bg-[#2F8FD8] text-white text-xs font-bold hover:bg-[#1F7EC7]"
+                        className="px-4 py-2 rounded-xl bg-[#2F8FD8] text-white text-xs font-black hover:bg-[#1F7EC7] cursor-pointer"
                       >
                         {stopwatchRunning ? "إيقاف" : "بدء 60ث"}
                       </button>
@@ -745,7 +783,7 @@ export default function HostRoomPage() {
                           setStopwatchRunning(false);
                           setStopwatchTime(60);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-white border border-[#E2EEF8] text-[#60788C] text-xs font-bold"
+                        className="px-3 py-2 rounded-xl bg-white border border-[#E2EEF8] text-[#60788C] text-xs font-bold cursor-pointer"
                       >
                         تصفير
                       </button>
@@ -756,55 +794,102 @@ export default function HostRoomPage() {
 
             </div>
 
-            {/* Skip / Show Results */}
+            {/* Manual Skip / Show Results if facilitator wants */}
             <div className="flex justify-end">
               <button
                 onClick={() => roomManager.showRoundResults(roomCode)}
-                className="px-4 py-2 rounded-xl bg-white border border-[#E2EEF8] text-xs font-bold text-[#60788C] hover:text-[#17324D] hover:bg-[#F4F9FD] shadow-2xs"
+                className="px-5 py-2.5 rounded-xl bg-white border border-[#E2EEF8] text-xs font-bold text-[#60788C] hover:text-[#17324D] hover:bg-[#F4F9FD] shadow-2xs cursor-pointer"
               >
-                إنهاء الجولة وإظهار النتائج الآن ⏭️
+                إنهاء الجولة وإظهار النتائج يدوياً ⏭️
               </button>
             </div>
           </div>
         )}
 
-        {/* 27 — ROUND RESULTS VIEW */}
+        {/* 4. ROUND RESULTS VIEW (Reveals correct answer & all votes now) */}
         {room.status === "ROUND_RESULTS" && currentRound && (
-          <div className="w-full max-w-3xl bg-white rounded-2xl p-6 sm:p-8 border border-[#E2EEF8] shadow-xs space-y-6 animate-scale-in">
+          <div className="w-full max-w-5xl 2xl:max-w-6xl bg-white rounded-3xl p-8 sm:p-12 border border-[#E2EEF8] shadow-sm space-y-8 animate-scale-in">
             <div className="text-center">
-              <span className="text-xs font-bold text-[#2F8FD8] uppercase tracking-wider">
-                نتائج الجولة
+              <span className="text-sm font-black text-[#2F8FD8] uppercase tracking-wider bg-[#EAF7FF] px-4 py-1.5 rounded-xl border border-[#C9ECFF]">
+                نتائج الجولة الرسمية 📊
               </span>
-              <h3 className="text-xl sm:text-2xl font-black text-[#17324D] mt-1">
+              <h3 className="text-2xl sm:text-4xl font-black text-[#17324D] mt-3 leading-tight">
                 {currentRound.promptAr}
               </h3>
             </div>
 
-            {/* Live Chart */}
+            {/* Results Grid */}
             {currentRound.optionsAr && (
-              <div className="space-y-3 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mt-6">
                 {currentRound.optionsAr.map((opt, optIdx) => {
                   const votes = roundAnswers.filter((a) => a.answer === optIdx).length;
                   const total = room.players.length || 1;
                   const percent = Math.round((votes / total) * 100);
                   const isCorrect = currentRound.correctAnswer !== undefined && currentRound.correctAnswer === optIdx;
+                  const theme = HOST_OPTION_THEMES[optIdx % HOST_OPTION_THEMES.length];
+                  const optAnswers = roundAnswers.filter((a) => a.answer === optIdx);
 
                   return (
-                    <div key={`${currentRound.id}-res-${optIdx}`} className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-[#17324D] flex items-center gap-1.5">
-                          {isCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                          <span>{opt}</span>
-                        </span>
-                        <span className="text-[#2F8FD8] font-mono">{percent}% ({votes} صوت)</span>
+                    <div
+                      key={`${currentRound.id}-res-${optIdx}`}
+                      className={`p-6 sm:p-8 rounded-3xl border-3 text-right transition-all shadow-sm flex flex-col justify-between ${
+                        isCorrect
+                          ? "border-emerald-500 bg-emerald-50/90 ring-4 ring-emerald-500/20"
+                          : currentRound.correctAnswer !== undefined
+                          ? "border-[#E2EEF8] bg-[#F4F9FD] opacity-90"
+                          : `${theme.border} bg-white`
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${isCorrect ? "bg-emerald-600 text-white" : theme.badge} flex items-center justify-center text-lg sm:text-xl font-black font-mono shadow-2xs`}>
+                              {theme.label}
+                            </span>
+                            {isCorrect && (
+                              <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-black flex items-center gap-1.5 shadow-2xs">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>الإجابة الصحيحة ✓</span>
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-2xl sm:text-3xl font-black font-mono text-[#17324D]">
+                              {percent}%
+                            </span>
+                            <span className="text-xs text-[#60788C] font-bold block">
+                              ({votes} صوت)
+                            </span>
+                          </div>
+                        </div>
+
+                        <h4 className="text-2xl sm:text-3xl font-black text-[#17324D] leading-snug my-2">
+                          {opt}
+                        </h4>
                       </div>
-                      <div className="h-2.5 w-full bg-[#F4F9FD] rounded-full overflow-hidden border border-[#E2EEF8]">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            isCorrect ? "bg-emerald-500" : "bg-[#2F8FD8]"
-                          }`}
-                          style={{ width: `${percent}%` }}
-                        />
+
+                      {/* Percentage Bar & Player Avatars */}
+                      <div className="mt-4 space-y-2.5">
+                        <div className="h-4 w-full bg-white rounded-full overflow-hidden border border-[#E2EEF8]">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${
+                              isCorrect ? "bg-emerald-500" : theme.barColor
+                            }`}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+
+                        {/* Player name tags */}
+                        <div className="flex flex-wrap gap-1.5 pt-1 min-h-[26px]">
+                          {optAnswers.map((ans) => (
+                            <span
+                              key={ans.playerId}
+                              className="text-xs px-2.5 py-1 rounded-lg bg-white border border-[#E2EEF8] text-[#17324D] font-bold shadow-2xs"
+                            >
+                              {ans.playerNickname}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );
@@ -813,16 +898,16 @@ export default function HostRoomPage() {
             )}
 
             {/* Next Round Button: Dominant CTA */}
-            <div className="pt-4 flex items-center justify-between border-t border-[#E2EEF8]">
-              <span className="text-xs text-[#60788C]">
+            <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E2EEF8]">
+              <span className="text-sm font-bold text-[#60788C]">
                 الجولة القادمة: {room.currentRoundIndex + 2} من {activity.rounds?.length || 1}
               </span>
               <button
                 onClick={handleNextRoundOrFinish}
-                className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-6 py-2.5 rounded-xl text-white text-xs font-bold flex items-center gap-1.5 shadow-xs"
+                className="w-full sm:w-auto bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 transition-all px-8 sm:px-10 py-4 rounded-2xl text-white text-base sm:text-lg font-black flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
-                <span>{room.currentRoundIndex + 1 < (activity.rounds?.length || 1) ? "الجولة التالية (Space)" : "عرض النتيجة النهائية 🏆"}</span>
-                <ChevronRight className="w-4 h-4 rotate-180" />
+                <span>{room.currentRoundIndex + 1 < (activity.rounds?.length || 1) ? "الجولة التالية (Space) ⏭️" : "عرض النتيجة النهائية 🏆"}</span>
+                <ChevronRight className="w-5 h-5 rotate-180" />
               </button>
             </div>
           </div>

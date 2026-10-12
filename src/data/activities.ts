@@ -2671,8 +2671,38 @@ export function getAllActivities(): Activity[] {
   return ACTIVITIES;
 }
 
+const ACTIVITY_SLUG_ALIASES: Record<string, string> = {
+  "sixty-sec-challenge": "sixty-second-challenge",
+  "discussion-starter": "unexpected-question",
+  "team-challenge": "human-knot",
+  "kids-riddles": "kids-riddle-spark",
+  "kids-seerah-journey": "seerah-journey",
+  "kids-kindness-mission": "kids-kindness-bank",
+  "quran-complete-verse": "quran-challenge",
+  "quran-vocabulary": "quranic-vocabulary",
+  "arabic-synonyms-challenge": "arabic-linguistic-wit",
+  "arabic-proverbs-trivia": "arabic-proverbs",
+  "arabic-eloquence-challenge": "word-artisan",
+  "the-unexpected-question": "unexpected-question",
+  "who-knows-the-group": "who-knows-group",
+  "two-truths-lie": "two-truths-and-a-lie",
+};
+
 export function getActivityBySlug(slug: string): Activity | undefined {
-  return ACTIVITIES.find((a) => a.slug === slug || a.id === slug);
+  if (!slug) return ACTIVITIES[0];
+  const normalized = slug.trim().toLowerCase();
+  const direct = ACTIVITIES.find((a) => a.slug === normalized || a.id === normalized);
+  if (direct) return direct;
+
+  const aliasedSlug = ACTIVITY_SLUG_ALIASES[normalized];
+  if (aliasedSlug) {
+    const aliased = ACTIVITIES.find((a) => a.slug === aliasedSlug || a.id === aliasedSlug);
+    if (aliased) return aliased;
+  }
+
+  // Soft fallback by inclusion
+  const partial = ACTIVITIES.find((a) => a.slug.includes(normalized) || normalized.includes(a.slug));
+  return partial || ACTIVITIES[0];
 }
 
 export function getActivitiesByAudience(audience: "adults" | "kids"): Activity[] {

@@ -164,6 +164,7 @@ export interface RoomState {
   activitySlug: string;
   status: RoomStatus;
   currentRoundIndex: number;
+  currentRound?: ActivityRound;
   roundTimer: number; // remaining seconds
   roundStartTime?: number;
   players: Player[];

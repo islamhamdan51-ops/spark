@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Sparkles, AlertCircle, ArrowRight } from "lucide-react";
 import { roomManager } from "@/lib/room-store";
-import { AVATAR_OPTIONS, getRandomAvatar } from "@/lib/utils";
+import { AVATAR_OPTIONS, AVATAR_CATEGORIES, getRandomAvatar } from "@/lib/utils";
 import { sounds } from "@/lib/sound";
 
 function JoinContent() {
@@ -16,6 +16,7 @@ function JoinContent() {
   const [code, setCode] = useState(initialCode);
   const [nickname, setNickname] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("⚡");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,12 +71,12 @@ function JoinContent() {
       <div className="text-center mb-6">
         <Link href="/" className="inline-flex items-center gap-2 group mb-3">
           <div className="w-10 h-10 rounded-2xl bg-[#EAF7FF] border border-[#BAE6FD] flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-[#2F8FD8]" />
+            <Sparkles className="w-5 h-5 text-[#0D5EA6]" />
           </div>
           <span className="text-2xl font-black text-[#17324D] font-arabic">شرارة</span>
         </Link>
         <h1 className="text-xl sm:text-2xl font-black text-[#17324D] font-arabic">الانضمام للغرفة</h1>
-        <p className="text-xs sm:text-sm text-[#60788C] mt-1 font-medium">ادخل رمز الغرفة واسمك المستعار للمشاركة فوراً</p>
+        <p className="text-xs sm:text-sm text-[#4E677A] mt-1 font-medium">ادخل رمز الغرفة واسمك المستعار للمشاركة فوراً</p>
       </div>
 
       {errorMsg && (
@@ -96,7 +97,7 @@ function JoinContent() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="مثال: 742391"
-            className="w-full text-center tracking-widest text-2xl font-mono font-black py-3 px-4 bg-[#F4F9FD] border border-[#E2EEF8] rounded-2xl text-[#2F8FD8] placeholder-[#60788C]/40 focus:outline-none focus:border-[#2F8FD8] focus:bg-white focus:ring-4 focus:ring-[#2F8FD8]/10 transition-all"
+            className="w-full text-center tracking-widest text-2xl font-mono font-black py-3 px-4 bg-[#F4F9FD] border border-[#E2EEF8] rounded-2xl text-[#0D5EA6] placeholder-[#60788C]/40 focus:outline-none focus:border-[#1A6DB5] focus:bg-white focus:ring-4 focus:ring-[#1A6DB5]/10 transition-all"
             required
             autoFocus={!initialCode}
           />
@@ -112,21 +113,78 @@ function JoinContent() {
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             placeholder="نور، ليث، سارة، الصقر..."
-            className="w-full text-right text-sm font-bold py-3 px-4 bg-[#F4F9FD] border border-[#E2EEF8] rounded-2xl text-[#17324D] placeholder-[#60788C]/40 focus:outline-none focus:border-[#2F8FD8] focus:bg-white focus:ring-4 focus:ring-[#2F8FD8]/10 transition-all"
+            className="w-full text-right text-sm font-bold py-3 px-4 bg-[#F4F9FD] border border-[#E2EEF8] rounded-2xl text-[#17324D] placeholder-[#60788C]/40 focus:outline-none focus:border-[#1A6DB5] focus:bg-white focus:ring-4 focus:ring-[#1A6DB5]/10 transition-all"
             required
             autoFocus={Boolean(initialCode)}
           />
-          <span className="text-[11px] text-[#60788C] mt-1 block text-right">
+          <span className="text-[11px] text-[#4E677A] mt-1 block text-right">
             لا يشترط اسمك الحقيقي، اختر أي لقب يعبر عنك!
           </span>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#17324D] mb-2 text-right">
-            اختر أيقونتك:
-          </label>
-          <div className="grid grid-cols-8 gap-1.5 p-2 bg-[#F4F9FD] rounded-2xl border border-[#E2EEF8]">
-            {AVATAR_OPTIONS.map((av) => (
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-bold text-[#17324D] text-right">
+              أيقونتك في الغرفة:
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playSelect();
+                setSelectedAvatar(getRandomAvatar());
+              }}
+              className="text-xs text-[#0D5EA6] hover:text-[#1F7EC7] font-bold flex items-center gap-1 bg-[#EAF7FF] hover:bg-[#DDF2FF] px-2.5 py-1 rounded-lg border border-[#C9ECFF] transition-colors"
+            >
+              <span>🎲 عشوائي</span>
+            </button>
+          </div>
+
+          {/* Current Avatar Highlight */}
+          <div className="flex items-center gap-3 p-3 mb-2 bg-[#F4F9FD] rounded-2xl border border-[#E2EEF8]">
+            <div className="w-12 h-12 rounded-xl bg-white border-2 border-[#1A6DB5] flex items-center justify-center text-3xl shadow-xs shrink-0">
+              {selectedAvatar}
+            </div>
+            <div className="text-right flex-1">
+              <span className="text-xs font-bold text-[#17324D] block">الأيقونة المختارة</span>
+              <span className="text-[11px] text-[#4E677A]">انقر على أي أيقونة بالأسفل لتغييرها</span>
+            </div>
+          </div>
+
+          {/* Categories Filter */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setActiveCategory("all")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
+                activeCategory === "all"
+                  ? "bg-[#1A6DB5] text-white"
+                  : "bg-white text-[#4E677A] border border-[#E2EEF8] hover:bg-[#F4F9FD]"
+              }`}
+            >
+              الكل ({AVATAR_OPTIONS.length})
+            </button>
+            {AVATAR_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
+                  activeCategory === cat.id
+                    ? "bg-[#1A6DB5] text-white"
+                    : "bg-white text-[#4E677A] border border-[#E2EEF8] hover:bg-[#F4F9FD]"
+                }`}
+              >
+                {cat.nameAr}
+              </button>
+            ))}
+          </div>
+
+          {/* Avatars Grid */}
+          <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 p-2.5 bg-[#F4F9FD] rounded-2xl border border-[#E2EEF8] max-h-48 overflow-y-auto">
+            {(activeCategory === "all"
+              ? AVATAR_OPTIONS
+              : AVATAR_CATEGORIES.find((c) => c.id === activeCategory)?.avatars || AVATAR_OPTIONS
+            ).map((av) => (
               <button
                 key={av}
                 type="button"
@@ -134,10 +192,10 @@ function JoinContent() {
                   sounds.playSelect();
                   setSelectedAvatar(av);
                 }}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all ${
+                className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all ${
                   selectedAvatar === av
-                    ? "bg-white border-2 border-[#2F8FD8] scale-105 shadow-xs"
-                    : "hover:bg-[#EAF7FF] text-slate-400"
+                    ? "bg-white border-2 border-[#1A6DB5] scale-110 shadow-xs ring-2 ring-[#1A6DB5]/20"
+                    : "bg-white/60 hover:bg-white text-slate-700 hover:scale-105"
                 }`}
               >
                 {av}
@@ -150,7 +208,7 @@ function JoinContent() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 rounded-2xl bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60"
+            className="w-full py-3.5 rounded-2xl bg-[#1A6DB5] hover:bg-[#155994] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-60"
           >
             <span>{isSubmitting ? "جاري الدخول..." : "دخول الغرفة"}</span>
           </button>
@@ -158,7 +216,7 @@ function JoinContent() {
       </form>
 
       <div className="text-center mt-6 pt-4 border-t border-[#E2EEF8]">
-        <Link href="/" className="text-xs font-bold text-[#60788C] hover:text-[#2F8FD8] transition-colors inline-flex items-center gap-1">
+        <Link href="/" className="text-xs font-bold text-[#4E677A] hover:text-[#0D5EA6] transition-colors inline-flex items-center gap-1">
           <span>العودة للصفحة الرئيسية</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -170,7 +228,7 @@ function JoinContent() {
 export default function JoinPage() {
   return (
     <div className="min-h-screen bg-[#F4F9FD] text-[#17324D] flex flex-col justify-center items-center p-4 font-arabic relative overflow-hidden">
-      <Suspense fallback={<div className="text-sm font-bold text-[#60788C]">جاري التحميل...</div>}>
+      <Suspense fallback={<div className="text-sm font-bold text-[#4E677A]">جاري التحميل...</div>}>
         <JoinContent />
       </Suspense>
     </div>

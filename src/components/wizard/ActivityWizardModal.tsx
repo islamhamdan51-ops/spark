@@ -64,20 +64,20 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-scale-in">
       <div className="relative w-full max-w-2xl bg-white border border-[#E2EEF8] rounded-3xl p-6 sm:p-8 shadow-xl overflow-hidden text-right font-arabic max-h-[90vh] flex flex-col">
         {/* Subtle Top Accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#2F8FD8]" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#1A6DB5]" />
 
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E2EEF8]">
           <button
             onClick={onClose}
             aria-label="إغلاق"
-            className="p-2 rounded-xl text-[#60788C] hover:text-[#17324D] hover:bg-[#F4F9FD] transition-colors"
+            className="p-2 rounded-xl text-[#4E677A] hover:text-[#17324D] hover:bg-[#F4F9FD] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="text-center flex-1">
-            <span className="text-xs font-bold text-[#2F8FD8] block">المكتشف الذكي</span>
+            <span className="text-xs font-bold text-[#0D5EA6] block">المكتشف الذكي</span>
             <h2 className="text-base sm:text-lg font-black text-[#17324D]">
               {result ? "لقينا لك الشرارة ✨" : `خطوة ${step} من ${totalSteps}`}
             </h2>
@@ -90,7 +90,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
         {!result && (
           <div className="w-full bg-[#EAF7FF] h-1.5 rounded-full my-4 overflow-hidden">
             <div
-              className="bg-[#2F8FD8] h-full transition-all duration-300"
+              className="bg-[#1A6DB5] h-full transition-all duration-300"
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
@@ -107,7 +107,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                   <h3 className="text-lg sm:text-xl font-black text-[#17324D]">
                     كم شخصاً في مجموعتك الآن؟
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#60788C]">
+                  <p className="text-xs sm:text-sm text-[#4E677A]">
                     يساعدنا هذا في ضبط وتيرة النشاط ونوع التفاعل (فردي، ثنائي، أو قاعة كاملة).
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
@@ -127,12 +127,12 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-4 rounded-2xl border text-right transition-all ${
                           answers.playerCount === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -145,7 +145,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                   <h3 className="text-lg sm:text-xl font-black text-[#17324D]">
                     من هم المشاركون في هذا النشاط؟
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#60788C]">
+                  <p className="text-xs sm:text-sm text-[#4E677A]">
                     نخصص لهجة المحتوى ودرجة التحدي بناءً على طبيعة الحضور.
                   </p>
                   <div className="grid grid-cols-2 gap-3 pt-2">
@@ -164,12 +164,12 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-4 rounded-2xl border text-right transition-all ${
                           answers.audience === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -200,12 +200,12 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-4 rounded-2xl border text-right transition-all ${
                           answers.ageRange === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -218,7 +218,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                   <h3 className="text-lg sm:text-xl font-black text-[#17324D]">
                     كم عندك وقت متاح لهذا النشاط؟
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#60788C]">
+                  <p className="text-xs sm:text-sm text-[#4E677A]">
                     نضمن لك نشاطاً ينتهي بالضبط في الوقت المحدد دون استعجال أو ملل.
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
@@ -238,12 +238,12 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-4 rounded-2xl border text-right transition-all ${
                           answers.durationMinutes === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -271,13 +271,13 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-5 rounded-2xl border text-right transition-all ${
                           answers.energy === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-2xl block mb-1">{opt.icon}</span>
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -311,7 +311,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-3.5 rounded-2xl border text-right transition-all flex items-center gap-2.5 ${
                           answers.goal === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
@@ -329,7 +329,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                   <h3 className="text-lg sm:text-xl font-black text-[#17324D]">
                     هل مع المشاركين هواتف متصلة بالإنترنت؟
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#60788C]">
+                  <p className="text-xs sm:text-sm text-[#4E677A]">
                     شرارة تدعم الأنشطة الحركية والواقعية التي لا تحتاج أي هاتف على الإطلاق!
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
@@ -347,13 +347,13 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-4 rounded-2xl border text-right transition-all ${
                           answers.hasPhones === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-2xl block mb-1">{opt.icon}</span>
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -380,13 +380,13 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         }}
                         className={`p-4 rounded-2xl border text-right transition-all ${
                           answers.hasScreen === opt.id
-                            ? "bg-[#EAF7FF] border-[#2F8FD8] shadow-xs ring-2 ring-[#2F8FD8]/20"
+                            ? "bg-[#EAF7FF] border-[#1A6DB5] shadow-xs ring-2 ring-[#1A6DB5]/20"
                             : "bg-white border-[#E2EEF8] hover:border-[#BAE6FD] hover:bg-[#F4F9FD]"
                         }`}
                       >
                         <span className="text-2xl block mb-1">{opt.icon}</span>
                         <span className="text-sm font-black text-[#17324D] block">{opt.label}</span>
-                        <span className="text-[11px] text-[#60788C] mt-1 block">{opt.desc}</span>
+                        <span className="text-[11px] text-[#4E677A] mt-1 block">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -403,30 +403,30 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
               {/* Featured Activity Card */}
               <div className="p-6 rounded-3xl bg-white border-2 border-[#BAE6FD] shadow-xs relative overflow-hidden">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#EAF7FF] text-[#2F8FD8]">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#EAF7FF] text-[#0D5EA6]">
                     ⭐ الخيار الأنسب لمجموعتك ({result.matchScore}% تطابق)
                   </span>
-                  <span className="text-xs font-medium text-[#60788C]">⏱️ {result.topActivity.duration} دقائق</span>
+                  <span className="text-xs font-medium text-[#4E677A]">⏱️ {result.topActivity.duration} دقائق</span>
                 </div>
 
                 <h3 className="text-2xl font-black text-[#17324D] font-arabic">
                   {result.topActivity.titleAr}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#60788C] mt-1.5 leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#4E677A] mt-1.5 leading-relaxed">
                   {result.topActivity.descriptionAr}
                 </p>
 
                 {/* "Why?" Section */}
                 <div className="mt-4 p-3.5 rounded-2xl bg-[#F4F9FD] border border-[#E2EEF8] text-xs text-[#17324D] leading-relaxed">
-                  <span className="font-bold text-[#2F8FD8] block mb-0.5">اخترناها لأن:</span>
-                  <span className="text-[#60788C]">{result.reasonAr}</span>
+                  <span className="font-bold text-[#0D5EA6] block mb-0.5">اخترناها لأن:</span>
+                  <span className="text-[#4E677A]">{result.reasonAr}</span>
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link
                     href={`/host/new?activity=${result.topActivity.slug}`}
                     onClick={onClose}
-                    className="px-6 py-3 rounded-2xl bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-sm flex items-center gap-2 transition-colors shadow-xs"
+                    className="px-6 py-3 rounded-2xl bg-[#1A6DB5] hover:bg-[#155994] text-white font-bold text-sm flex items-center gap-2 transition-colors shadow-xs"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>ابدأ هذا النشاط</span>
@@ -435,7 +435,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                   <Link
                     href={`/activities/${result.topActivity.slug}`}
                     onClick={onClose}
-                    className="px-5 py-3 rounded-2xl border border-[#BAE6FD] bg-white hover:bg-[#F4F9FD] text-[#2F8FD8] font-bold text-xs transition-colors"
+                    className="px-5 py-3 rounded-2xl border border-[#BAE6FD] bg-white hover:bg-[#F4F9FD] text-[#0D5EA6] font-bold text-xs transition-colors"
                   >
                     معاينة التفاصيل
                   </Link>
@@ -445,7 +445,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
               {/* Alternative Recommendations */}
               {result.alternatives.length > 0 && (
                 <div className="space-y-3 pt-2">
-                  <h4 className="text-xs font-bold text-[#60788C] uppercase tracking-wider">
+                  <h4 className="text-xs font-bold text-[#4E677A] uppercase tracking-wider">
                     بدائل أخرى تناسب مجموعتك:
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -455,23 +455,23 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
                         className="p-4 rounded-2xl border border-[#E2EEF8] bg-white hover:border-[#BAE6FD] transition-all text-right flex flex-col justify-between"
                       >
                         <div>
-                          <div className="flex items-center justify-between text-[11px] text-[#60788C] mb-1">
-                            <span className="font-bold text-[#2F8FD8]">{alt.duration} دقائق</span>
+                          <div className="flex items-center justify-between text-[11px] text-[#4E677A] mb-1">
+                            <span className="font-bold text-[#0D5EA6]">{alt.duration} دقائق</span>
                             <span>{alt.energy === "high" ? "⚡ طاقة عالية" : "🌤 متوازن"}</span>
                           </div>
                           <h5 className="text-sm font-black text-[#17324D]">{alt.titleAr}</h5>
-                          <p className="text-[11px] text-[#60788C] mt-1 line-clamp-2">{alt.descriptionAr}</p>
+                          <p className="text-[11px] text-[#4E677A] mt-1 line-clamp-2">{alt.descriptionAr}</p>
                         </div>
                         <div className="mt-3 pt-2 border-t border-[#E2EEF8] flex items-center justify-between">
                           <Link
                             href={`/host/new?activity=${alt.slug}`}
                             onClick={onClose}
-                            className="text-xs font-bold text-[#2F8FD8] hover:underline flex items-center gap-1"
+                            className="text-xs font-bold text-[#0D5EA6] hover:underline flex items-center gap-1"
                           >
                             <span>تشغيل</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </Link>
-                          <span className="text-[10px] text-[#60788C]">
+                          <span className="text-[10px] text-[#4E677A]">
                             {alt.requiresPhone ? "📱 بهواتف" : "✅ بلا هواتف"}
                           </span>
                         </div>
@@ -491,7 +491,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
               <button
                 onClick={handlePrev}
                 disabled={step === 1}
-                className="px-4 py-2.5 rounded-xl border border-[#E2EEF8] text-[#60788C] font-bold text-xs hover:bg-[#F4F9FD] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center gap-1"
+                className="px-4 py-2.5 rounded-xl border border-[#E2EEF8] text-[#4E677A] font-bold text-xs hover:bg-[#F4F9FD] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center gap-1"
               >
                 <ChevronRight className="w-4 h-4" />
                 <span>السابق</span>
@@ -499,7 +499,7 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
 
               <button
                 onClick={handleNext}
-                className="px-6 py-2.5 rounded-xl bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-xs"
+                className="px-6 py-2.5 rounded-xl bg-[#1A6DB5] hover:bg-[#155994] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-xs"
               >
                 <span>{step === totalSteps ? "اكتشف الشرارة" : "التالي"}</span>
                 <ChevronLeft className="w-4 h-4" />
@@ -509,15 +509,15 @@ export function ActivityWizardModal({ isOpen, onClose, initialAudience }: Activi
             <>
               <button
                 onClick={handleReset}
-                className="px-4 py-2 rounded-xl border border-[#E2EEF8] text-[#60788C] font-bold text-xs hover:bg-[#F4F9FD] transition-colors flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl border border-[#E2EEF8] text-[#4E677A] font-bold text-xs hover:bg-[#F4F9FD] transition-colors flex items-center gap-1.5"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-[#60788C]" />
+                <RotateCcw className="w-3.5 h-3.5 text-[#4E677A]" />
                 <span>إعادة الاختيار</span>
               </button>
 
               <button
                 onClick={onClose}
-                className="text-xs font-bold text-[#60788C] hover:text-[#17324D] transition-colors"
+                className="text-xs font-bold text-[#4E677A] hover:text-[#17324D] transition-colors"
               >
                 إغلاق النافذة
               </button>

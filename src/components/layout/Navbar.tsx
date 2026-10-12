@@ -32,21 +32,21 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
         
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-[#EAF7FF] border border-[#C9ECFF] flex items-center justify-center text-[#2F8FD8] group-hover:bg-[#DDF2FF] transition-colors">
-            <Sparkles className="w-5 h-5 text-[#2F8FD8]" />
+          <div className="w-9 h-9 rounded-xl bg-[#EAF7FF] border border-[#C9ECFF] flex items-center justify-center text-[#0D5EA6] group-hover:bg-[#DDF2FF] transition-colors">
+            <Sparkles className="w-5 h-5 text-[#0D5EA6]" />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold tracking-tight text-[#17324D] font-arabic">
               شرارة
             </span>
-            <span className="text-[11px] tracking-wider text-[#60788C] font-mono font-medium">
+            <span className="text-[11px] tracking-wider text-[#4E677A] font-mono font-medium">
               SPARK
             </span>
           </div>
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#60788C]">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#4E677A]">
           <Link
             href="/activities"
             className="hover:text-[#17324D] transition-colors"
@@ -55,7 +55,7 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
           </Link>
           <Link
             href="/sessions"
-            className="hover:text-[#17324D] transition-colors font-bold text-[#2F8FD8]"
+            className="hover:text-[#17324D] transition-colors font-bold text-[#0D5EA6]"
           >
             الجلسات
           </Link>
@@ -86,27 +86,27 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
             onClick={handleToggleSound}
             aria-label={isMuted ? "تشغيل الصوت" : "كتم الصوت"}
             title={isMuted ? "تشغيل الصوت" : "كتم الصوت"}
-            className="p-2 rounded-lg text-[#60788C] hover:text-[#17324D] hover:bg-[#F4F9FD] transition-colors"
+            className="p-2 rounded-lg text-[#4E677A] hover:text-[#17324D] hover:bg-[#F4F9FD] transition-colors"
           >
             {isMuted ? (
               <VolumeX className="w-4 h-4 text-[#A0AEC0]" />
             ) : (
-              <Volume2 className="w-4 h-4 text-[#2F8FD8]" />
+              <Volume2 className="w-4 h-4 text-[#0D5EA6]" />
             )}
           </button>
 
-          {/* Primary Action Button: [ابدأ] - Dominant and Clean */}
+          {/* Primary Action Button: [ابدأ] - High-contrast AA accessible */}
           {onOpenWizard ? (
             <button
               onClick={onOpenWizard}
-              className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-xs transition-all flex items-center gap-1.5"
+              className="bg-[#1A6DB5] hover:bg-[#155994] active:scale-98 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-xs transition-all flex items-center gap-1.5"
             >
               <span>ابدأ</span>
             </button>
           ) : (
             <Link
               href="/activities"
-              className="bg-[#2F8FD8] hover:bg-[#1F7EC7] active:scale-98 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-xs transition-all flex items-center gap-1.5"
+              className="bg-[#1A6DB5] hover:bg-[#155994] active:scale-98 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-xs transition-all flex items-center gap-1.5"
             >
               <span>ابدأ</span>
             </Link>
@@ -118,14 +118,14 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
           {onOpenWizard ? (
             <button
               onClick={onOpenWizard}
-              className="bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+              className="bg-[#1A6DB5] hover:bg-[#155994] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
             >
               ابدأ
             </button>
           ) : (
             <Link
               href="/activities"
-              className="bg-[#2F8FD8] hover:bg-[#1F7EC7] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+              className="bg-[#1A6DB5] hover:bg-[#155994] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
             >
               ابدأ
             </Link>
@@ -154,7 +154,7 @@ export function Navbar({ onOpenWizard, onOpenRandomSpark }: NavbarProps) {
             <Link
               href="/sessions"
               onClick={() => setMobileMenuOpen(false)}
-              className="p-2 rounded-lg hover:bg-[#F4F9FD] transition-colors font-bold text-[#2F8FD8]"
+              className="p-2 rounded-lg hover:bg-[#F4F9FD] transition-colors font-bold text-[#0D5EA6]"
             >
               الجلسات
             </Link>
